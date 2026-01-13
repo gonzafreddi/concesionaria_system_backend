@@ -31,25 +31,25 @@ export class VehicleRequest {
   type: 'AUTO' | 'MOTO' | null;
 
   @Column({ nullable: true })
-  brand: string | null;
+  brand: string;
 
   @Column({ nullable: true })
-  model: string | null;
+  model: string;
 
   @Column({ name: 'year_from', nullable: true })
-  yearFrom: number | null;
+  yearFrom: number;
 
   @Column({ name: 'year_to', nullable: true })
-  yearTo: number | null;
+  yearTo: number;
 
   @Column({ name: 'color_preference', nullable: true })
-  colorPreference: string | null;
+  colorPreference: string;
 
   @Column({ name: 'max_price', type: 'decimal', nullable: true })
-  maxPrice: number | null;
+  maxPrice: number;
 
   @Column({ type: 'text', nullable: true })
-  notes: string | null;
+  notes: string;
 
   @Column({ type: 'enum', enum: RequestStatus, default: RequestStatus.OPEN })
   status: RequestStatus;

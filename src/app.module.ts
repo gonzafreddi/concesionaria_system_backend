@@ -9,7 +9,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { ClientsModule } from './clients/clients.module';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
-
+import 'dotenv/config';
 @Module({
   imports: [
     TypeOrmModule.forRoot({

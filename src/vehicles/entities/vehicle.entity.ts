@@ -45,8 +45,8 @@ export class Vehicle {
   @Column({ type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ nullable: true })
-  mileage: number | null;
+  @Column({ type: 'int', nullable: true })
+  mileage: number;
 
   @Column({
     type: 'enum',

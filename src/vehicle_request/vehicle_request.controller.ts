@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { VehicleRequestService } from './vehicle_request.service';
 import { CreateVehicleRequestDto } from './dto/create-vehicle_request.dto';
 import { UpdateVehicleRequestDto } from './dto/update-vehicle_request.dto';
 
+@ApiTags('vehicle-requests')
 @Controller('vehicle-request')
 export class VehicleRequestController {
   constructor(private readonly vehicleRequestService: VehicleRequestService) {}
@@ -18,17 +20,17 @@ export class VehicleRequestController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.vehicleRequestService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.vehicleRequestService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateVehicleRequestDto: UpdateVehicleRequestDto) {
-    return this.vehicleRequestService.update(+id, updateVehicleRequestDto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateVehicleRequestDto: UpdateVehicleRequestDto) {
+    return this.vehicleRequestService.update(id, updateVehicleRequestDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.vehicleRequestService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.vehicleRequestService.remove(id);
   }
 }

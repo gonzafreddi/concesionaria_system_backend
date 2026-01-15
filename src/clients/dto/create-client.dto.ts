@@ -26,4 +26,19 @@ export class CreateClientDto {
   @IsOptional()
   @IsEmail()
   email?: string;
-} 
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  province?: string;
+}

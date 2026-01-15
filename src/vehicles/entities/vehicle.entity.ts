@@ -12,14 +12,15 @@ import { Sale } from '../../sales/entities/sale.entity';
 import { VehicleAcquisitionTypes } from './vehicle_acquisition_types';
 
 export enum VehicleType {
-  AUTO = 'USADO',
-  MOTO = 'NUEVO',
+  NEW = 'NEW',
+  USED = 'USED',
 }
 
 export enum VehicleStatus {
   AVAILABLE = 'AVAILABLE',
   RESERVED = 'RESERVED',
   SOLD = 'SOLD',
+  ISPECTION = 'INSPECTION',
 }
 
 @Entity('vehicles')
@@ -36,7 +37,7 @@ export class Vehicle {
   @Column()
   model: string;
 
-  @Column()
+  @Column({ unique: true })
   vehiclePlate: string;
 
   @Column()
@@ -63,7 +64,7 @@ export class Vehicle {
   @Column({
     type: 'enum',
     enum: VehicleStatus,
-    default: VehicleStatus.AVAILABLE,
+    default: VehicleStatus.ISPECTION,
   })
   status: VehicleStatus;
 
@@ -79,7 +80,7 @@ export class Vehicle {
   @ManyToOne(
     () => VehicleAcquisitionTypes,
     (acquisitionType) => acquisitionType.vehicles,
-    { nullable: false },
+    { nullable: true },
   )
   @JoinColumn({ name: 'acquisition_type_id' })
   acquisitionType: VehicleAcquisitionTypes;

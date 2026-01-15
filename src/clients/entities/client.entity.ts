@@ -29,6 +29,15 @@ export class Client {
   @Column({ nullable: true })
   email: string;
 
+  @Column({ nullable: true })
+  address: string;
+
+  @Column({ nullable: true })
+  city: string;
+
+  @Column({ nullable: true })
+  province: string;
+
   @Column({ type: 'text', name: 'signature_data', nullable: true })
   signatureData: string | null;
 

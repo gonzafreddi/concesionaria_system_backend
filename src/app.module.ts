@@ -10,6 +10,8 @@ import { ClientsModule } from './clients/clients.module';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
 import 'dotenv/config';
+import { VehicleAcquisitionTypes } from './vehicles/entities/vehicle_acquisition_types';
+import { InspectionsModule } from './inspections/inspections.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -29,6 +31,8 @@ import 'dotenv/config';
     ClientsModule,
     UsersModule,
     VehiclesModule,
+    VehicleAcquisitionTypes,
+    InspectionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

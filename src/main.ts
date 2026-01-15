@@ -16,7 +16,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = Number(process.env.PORT) || 3000;
+  const port = Number(process.env.PORT) || 3001;
   console.log(`Starting Nest application on port ${port}`);
   await app.listen(port);
   console.log(`Nest application started and listening on port ${port}`);

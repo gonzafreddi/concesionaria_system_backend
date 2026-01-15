@@ -4,13 +4,16 @@ import {
   Column,
   CreateDateColumn,
   OneToMany,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { Quote } from '../../quotes/entities/quote.entity';
 import { Sale } from '../../sales/entities/sale.entity';
+import { VehicleAcquisitionTypes } from './vehicle_acquisition_types';
 
 export enum VehicleType {
-  AUTO = 'AUTO',
-  MOTO = 'MOTO',
+  AUTO = 'USADO',
+  MOTO = 'NUEVO',
 }
 
 export enum VehicleStatus {
@@ -34,6 +37,9 @@ export class Vehicle {
   model: string;
 
   @Column()
+  vehiclePlate: string;
+
+  @Column()
   year: number;
 
   @Column()
@@ -42,11 +48,17 @@ export class Vehicle {
   @Column({ type: 'decimal' })
   price: number;
 
+  @Column({ type: 'decimal', nullable: true })
+  acquisitionPrice: number;
+
   @Column({ type: 'text', nullable: true })
-  description: string | null;
+  characteristics: string | null;
 
   @Column({ type: 'int', nullable: true })
   mileage: number;
+
+  @Column({ type: 'text', nullable: true })
+  technicalSpecifications: string;
 
   @Column({
     type: 'enum',
@@ -63,4 +75,12 @@ export class Vehicle {
 
   @OneToMany(() => Sale, (s) => s.vehicle)
   sales: Sale[];
+
+  @ManyToOne(
+    () => VehicleAcquisitionTypes,
+    (acquisitionType) => acquisitionType.vehicles,
+    { nullable: false },
+  )
+  @JoinColumn({ name: 'acquisition_type_id' })
+  acquisitionType: VehicleAcquisitionTypes;
 }

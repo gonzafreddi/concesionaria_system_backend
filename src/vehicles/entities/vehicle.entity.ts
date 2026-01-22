@@ -10,7 +10,7 @@ import {
 import { Quote } from '../../quotes/entities/quote.entity';
 import { Sale } from '../../sales/entities/sale.entity';
 import { VehicleAcquisitionTypes } from './vehicle_acquisition_types';
-
+import { Inspection } from '../../inspections/entities/inspection.entity';
 export enum VehicleType {
   NEW = 'NEW',
   USED = 'USED',
@@ -84,4 +84,7 @@ export class Vehicle {
   )
   @JoinColumn({ name: 'acquisition_type_id' })
   acquisitionType: VehicleAcquisitionTypes;
+
+  @OneToMany(() => Inspection, (i: Inspection) => i.vehicle)
+  inspections: Inspection[];
 }

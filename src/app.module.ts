@@ -31,7 +31,7 @@ import { InspectionsModule } from './inspections/inspections.module';
     ClientsModule,
     UsersModule,
     VehiclesModule,
-    VehicleAcquisitionTypes,
+    // VehicleAcquisitionTypes,
     InspectionsModule,
   ],
   controllers: [AppController],

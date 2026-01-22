@@ -8,6 +8,7 @@ import {
 import { VehicleRequest } from '../../vehicle_request/entities/vehicle_request.entity';
 import { Quote } from '../../quotes/entities/quote.entity';
 import { Sale } from '../../sales/entities/sale.entity';
+import { Inspection } from '../../inspections/entities/inspection.entity';
 
 @Entity('clients')
 export class Client {
@@ -55,4 +56,7 @@ export class Client {
 
   @OneToMany(() => Sale, (s) => s.client)
   sales: Sale[];
+
+  @OneToMany(() => Inspection, (i) => i.client)
+  inspections: Inspection[];
 }

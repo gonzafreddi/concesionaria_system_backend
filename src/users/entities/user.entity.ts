@@ -29,6 +29,9 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.SELLER })
   role: UserRole;
 
+  @Column()
+  password: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

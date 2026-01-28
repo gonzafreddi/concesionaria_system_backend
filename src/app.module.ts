@@ -10,8 +10,9 @@ import { ClientsModule } from './clients/clients.module';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
 import 'dotenv/config';
-import { VehicleAcquisitionTypes } from './vehicles/entities/vehicle_acquisition_types';
+// import { VehicleAcquisitionTypes } from './vehicles/entities/vehicle_acquisition_types';
 import { InspectionsModule } from './inspections/inspections.module';
+import { AuthModule } from './auth/auth.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -33,6 +34,7 @@ import { InspectionsModule } from './inspections/inspections.module';
     VehiclesModule,
     // VehicleAcquisitionTypes,
     InspectionsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

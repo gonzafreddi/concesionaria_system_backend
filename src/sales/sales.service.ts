@@ -25,14 +25,21 @@ export class SalesService {
   ) {}
 
   async create(createSaleDto: CreateSaleDto) {
-    const { quoteId, clientId, vehicleId, userId, saleDate, totalAmount } = createSaleDto as any;
-    const client = await this.clientRepository.findOne({ where: { id: clientId } });
+    const { quoteId, clientId, vehicleId, userId, saleDate, totalAmount } =
+      createSaleDto as any;
+    const client = await this.clientRepository.findOne({
+      where: { id: clientId },
+    });
     if (!client) throw new NotFoundException(`Client ${clientId} not found`);
-    const vehicle = await this.vehicleRepository.findOne({ where: { id: vehicleId } });
+    const vehicle = await this.vehicleRepository.findOne({
+      where: { id: vehicleId },
+    });
     if (!vehicle) throw new NotFoundException(`Vehicle ${vehicleId} not found`);
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException(`User ${userId} not found`);
-    const quote = quoteId ? await this.quoteRepository.findOne({ where: { id: quoteId } }) : null;
+    const quote = quoteId
+      ? await this.quoteRepository.findOne({ where: { id: quoteId } })
+      : null;
 
     const sale = this.salesRepository.create({
       quote,
@@ -47,11 +54,16 @@ export class SalesService {
   }
 
   findAll() {
-    return this.salesRepository.find({ relations: ['client', 'vehicle', 'user', 'quote'] });
+    return this.salesRepository.find({
+      relations: ['client', 'vehicle', 'user', 'quote'],
+    });
   }
 
   async findOne(id: number) {
-    const sale = await this.salesRepository.findOne({ where: { id }, relations: ['client', 'vehicle', 'user', 'quote', 'payments'] });
+    const sale = await this.salesRepository.findOne({
+      where: { id },
+      relations: ['client', 'vehicle', 'user', 'quote', 'payments'],
+    });
     if (!sale) throw new NotFoundException(`Sale ${id} not found`);
     return sale;
   }

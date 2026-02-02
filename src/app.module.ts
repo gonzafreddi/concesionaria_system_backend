@@ -13,6 +13,7 @@ import 'dotenv/config';
 // import { VehicleAcquisitionTypes } from './vehicles/entities/vehicle_acquisition_types';
 import { InspectionsModule } from './inspections/inspections.module';
 import { AuthModule } from './auth/auth.module';
+import { PreSalesModule } from './pre_sales/pre_sales.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -35,6 +36,7 @@ import { AuthModule } from './auth/auth.module';
     // VehicleAcquisitionTypes,
     InspectionsModule,
     AuthModule,
+    PreSalesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

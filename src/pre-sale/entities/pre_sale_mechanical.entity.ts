@@ -29,6 +29,7 @@ export class PreSaleMechanical {
   @Column({ default: false }) alignmentAndBalancing: boolean;
   @Column({ default: false }) fluidLevelsCheck: boolean;
   @Column({ default: false }) roadTestAndDiagnostics: boolean;
+  @Column({ default: false }) completed: boolean;
 
   @Column({ nullable: true })
   observations?: string;

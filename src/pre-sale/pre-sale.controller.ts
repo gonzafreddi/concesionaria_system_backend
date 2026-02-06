@@ -39,4 +39,10 @@ export class PreSaleController {
   remove(@Param('id') id: string) {
     return this.preSaleService.remove(+id);
   }
+
+  @Get(':id/verify-completion')
+  verifyCompletion(@Param('id') id: string) {
+    return this.preSaleService.verifyCompletion(+id);
+  }
 }
+//TODO: acomodar verificacion de completion

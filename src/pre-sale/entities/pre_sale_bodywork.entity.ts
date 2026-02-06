@@ -28,6 +28,8 @@ export class PreSaleBodywork {
   @Column({ default: false })
   finalPolish: boolean;
 
+  @Column({ default: false }) completed: boolean;
+
   @Column({ nullable: true })
   observations?: string;
 

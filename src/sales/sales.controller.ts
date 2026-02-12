@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
@@ -25,7 +34,10 @@ export class SalesController {
   }
 
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateSaleDto: UpdateSaleDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateSaleDto: UpdateSaleDto,
+  ) {
     return this.salesService.update(id, updateSaleDto);
   }
 

@@ -153,6 +153,18 @@ Pagos asociados a una venta.
 
 ---
 
+---
+
+## Vehicle acquisition
+
+Tipos de adquisiciones de los vehiculos.
+Por ejemplo Compra directa , permuta , consignacion
+
+* id: identificador único
+* name : Nombre del tipo de adquisicion 
+* active : Si esta activa 
+* vehicles: la asociacion a los vehiculos
+
 ## 🛠️ Tecnologías objetivo
 
 * Backend: NestJS

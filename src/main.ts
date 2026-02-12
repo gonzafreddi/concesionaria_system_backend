@@ -18,7 +18,7 @@ async function bootstrap() {
 
   const port = Number(process.env.PORT) || 3001;
   console.log(`Starting Nest application on port ${port}`);
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   console.log(`Nest application started and listening on port ${port}`);
 }
 bootstrap();

@@ -9,6 +9,7 @@ import { Client } from '../clients/entities/client.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { User } from '../users/entities/user.entity';
 import { Payment } from '../payments/entities/payment.entity';
+import { VehiclesModule } from 'src/vehicles/vehicles.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { Payment } from '../payments/entities/payment.entity';
       User,
       Payment,
     ]),
+    VehiclesModule,
   ],
   controllers: [SalesController],
   providers: [SalesService],

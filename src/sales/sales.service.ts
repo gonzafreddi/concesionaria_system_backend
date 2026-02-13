@@ -16,6 +16,7 @@ import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
 import { User } from '../users/entities/user.entity';
 import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
+import { VehiclesService } from 'src/vehicles/vehicles.service';
 
 /**
  * SALES SERVICE - Lógica centralizada
@@ -62,6 +63,8 @@ export class SalesService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private dataSource: DataSource,
+
+    private vehiclesService: VehiclesService,
   ) {}
 
   /**
@@ -93,7 +96,11 @@ export class SalesService {
     const quote = quoteId
       ? await this.quoteRepository.findOne({ where: { id: quoteId } })
       : null;
-
+    if (vehicle.status !== VehicleStatus.AVAILABLE) {
+      throw new BadRequestException(
+        `El vehículo con el dominio ${vehicle.vehiclePlate} no está disponible para venta`,
+      );
+    }
     // Crear nueva venta
     const sale = this.salesRepository.create({
       quote,
@@ -109,7 +116,10 @@ export class SalesService {
       payments: [],
       tradeIns: [],
     });
+    // cambio estado de vehiculo
+    vehicle.status = VehicleStatus.RESERVED;
 
+    await this.vehicleRepository.save(vehicle);
     return this.salesRepository.save(sale);
   }
 

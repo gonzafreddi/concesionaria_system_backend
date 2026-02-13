@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { Vehicle } from './entities/vehicle.entity';
-
+import { VehicleStatus } from './entities/vehicle.entity';
 @Injectable()
 export class VehiclesService {
   constructor(
@@ -37,5 +37,11 @@ export class VehiclesService {
     const vehicle = await this.findOne(id);
     await this.vehiclesRepository.remove(vehicle);
     return { deleted: true };
+  }
+
+  async changeStatus(id: number, status: VehicleStatus) {
+    const vehicle = await this.findOne(id);
+    vehicle.status = status;
+    return this.vehiclesRepository.save(vehicle);
   }
 }

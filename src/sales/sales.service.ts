@@ -74,53 +74,123 @@ export class SalesService {
    * finalPrice = basePrice (se actualiza con trade-ins)
    */
   async create(createSaleDto: CreateSaleDto) {
-    const { quoteId, clientId, vehicleId, userId, saleDate, basePrice, type } =
+    const { clientId, vehicleId, userId, saleDate, type, tradeIns } =
       createSaleDto;
 
-    // Validar existencia de registros
-    const client = await this.clientRepository.findOne({
-      where: { id: clientId },
+    return this.dataSource.transaction(async (manager) => {
+      // 🔒 Buscar vehículo principal dentro de la transaction
+      const vehicle = await manager.findOne(Vehicle, {
+        where: { id: vehicleId },
+      });
+
+      if (!vehicle) {
+        throw new NotFoundException(`Vehículo ${vehicleId} no encontrado`);
+      }
+      let basePrice = Number(createSaleDto.basePrice);
+
+      if (!basePrice || basePrice <= 0) {
+        basePrice = Number(vehicle.price);
+      }
+      console.log(basePrice);
+      if (vehicle.status !== VehicleStatus.AVAILABLE) {
+        throw new BadRequestException(
+          `El vehículo ${vehicle.vehiclePlate} no está disponible`,
+        );
+      }
+
+      const client = await manager.findOne(Client, {
+        where: { id: clientId },
+      });
+      if (!client) {
+        throw new NotFoundException(`Cliente ${clientId} no encontrado`);
+      }
+
+      const user = await manager.findOne(User, {
+        where: { id: userId },
+      });
+      if (!user) {
+        throw new NotFoundException(`Usuario ${userId} no encontrado`);
+      }
+
+      const parsedDate = saleDate ? new Date(saleDate) : new Date();
+      if (isNaN(parsedDate.getTime())) {
+        throw new BadRequestException('Fecha inválida');
+      }
+
+      let totalPaid = 0;
+      let tradeInVehicle: Vehicle | null = null;
+
+      // 🚘 Trade-in
+      if (tradeIns) {
+        tradeInVehicle = await manager.findOne(Vehicle, {
+          where: { id: tradeIns },
+        });
+
+        if (!tradeInVehicle) {
+          throw new NotFoundException(
+            `Vehículo de trade-in ${tradeIns} no encontrado`,
+          );
+        }
+
+        const existingTradeIn = await manager.findOne(TradeIn, {
+          where: { vehicle: { id: tradeIns } },
+          relations: ['sale'],
+        });
+
+        if (
+          existingTradeIn &&
+          existingTradeIn.sale.status !== SaleStatus.DELIVERED
+        ) {
+          throw new BadRequestException(
+            `Vehículo de trade-in ya está en otra operación activa`,
+          );
+        }
+
+        if (tradeInVehicle.price > basePrice) {
+          throw new BadRequestException(
+            `El valor del vehículo entregado no puede exceder el precio base`,
+          );
+        }
+
+        totalPaid += tradeInVehicle.price;
+      }
+
+      // 🧾 Crear venta
+      const sale = manager.create(Sale, {
+        client,
+        vehicle,
+        user,
+        type: type || SaleType.SALE,
+        status: SaleStatus.DRAFT,
+        basePrice,
+        finalPrice: basePrice,
+        totalPaid,
+        saleDate: parsedDate,
+      });
+
+      await manager.save(sale);
+
+      // 🚘 Crear TradeIn si existe
+      if (tradeInVehicle) {
+        const tradeIn = manager.create(TradeIn, {
+          vehicle: tradeInVehicle,
+          sale,
+          agreedValue: tradeInVehicle.price,
+        });
+
+        await manager.save(tradeIn);
+
+        // Cambiar estado del vehículo entregado
+        tradeInVehicle.status = VehicleStatus.ISPECTION;
+        await manager.save(tradeInVehicle);
+      }
+
+      // 🚗 Reservar vehículo principal
+      vehicle.status = VehicleStatus.RESERVED;
+      await manager.save(vehicle);
+
+      return sale;
     });
-    if (!client)
-      throw new NotFoundException(`Cliente ${clientId} no encontrado`);
-
-    const vehicle = await this.vehicleRepository.findOne({
-      where: { id: vehicleId },
-    });
-    if (!vehicle)
-      throw new NotFoundException(`Vehículo ${vehicleId} no encontrado`);
-
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException(`Usuario ${userId} no encontrado`);
-
-    const quote = quoteId
-      ? await this.quoteRepository.findOne({ where: { id: quoteId } })
-      : null;
-    if (vehicle.status !== VehicleStatus.AVAILABLE) {
-      throw new BadRequestException(
-        `El vehículo con el dominio ${vehicle.vehiclePlate} no está disponible para venta`,
-      );
-    }
-    // Crear nueva venta
-    const sale = this.salesRepository.create({
-      quote,
-      client,
-      vehicle,
-      user,
-      type: type || SaleType.SALE,
-      status: SaleStatus.DRAFT,
-      basePrice,
-      finalPrice: basePrice, // Inicial igual a base
-      totalPaid: 0,
-      saleDate: new Date(saleDate),
-      payments: [],
-      tradeIns: [],
-    });
-    // cambio estado de vehiculo
-    vehicle.status = VehicleStatus.RESERVED;
-
-    await this.vehicleRepository.save(vehicle);
-    return this.salesRepository.save(sale);
   }
 
   /**

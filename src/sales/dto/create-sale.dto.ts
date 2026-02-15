@@ -73,4 +73,8 @@ export class CreateSaleDto {
   })
   @IsDateString()
   saleDate: string;
+
+  @IsNumber()
+  @IsOptional()
+  tradeIns?: number; // Se pueden agregar trade-ins al crear la venta, pero no es obligatorio
 }

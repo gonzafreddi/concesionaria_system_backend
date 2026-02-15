@@ -44,4 +44,14 @@ export class VehiclesService {
     vehicle.status = status;
     return this.vehiclesRepository.save(vehicle);
   }
+
+  async getVehicleForSale() {
+    const vehicles = await this.vehiclesRepository.find({
+      where: {
+        status: VehicleStatus.AVAILABLE,
+      },
+    });
+
+    return vehicles;
+  }
 }

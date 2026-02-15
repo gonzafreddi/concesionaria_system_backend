@@ -13,6 +13,7 @@ import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 import { User } from '../../users/entities/user.entity';
 import { Payment } from '../../payments/entities/payment.entity';
 import { TradeIn } from './trade-in.entity';
+import { Expose } from 'class-transformer';
 
 /**
  * Sale Entity
@@ -101,4 +102,8 @@ export class Sale {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+  @Expose()
+  get pendingBalance(): number {
+    return Number(this.finalPrice) - Number(this.totalPaid);
+  }
 }

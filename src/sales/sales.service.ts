@@ -73,12 +73,21 @@ export class SalesService {
    * Inicia en DRAFT, sin cambiar stock hasta RESERVED.
    * finalPrice = basePrice (se actualiza con trade-ins)
    */
+
   async create(createSaleDto: CreateSaleDto) {
-    const { clientId, vehicleId, userId, saleDate, type, tradeIns } =
-      createSaleDto;
+    const {
+      clientId,
+      vehicleId,
+      userId,
+      saleDate,
+      type,
+      tradeIns,
+      transferPercentage,
+      adminExpenses,
+    } = createSaleDto;
 
     return this.dataSource.transaction(async (manager) => {
-      // 🔒 Buscar vehículo principal dentro de la transaction
+      // 🔒 Buscar vehículo principal
       const vehicle = await manager.findOne(Vehicle, {
         where: { id: vehicleId },
       });
@@ -86,18 +95,20 @@ export class SalesService {
       if (!vehicle) {
         throw new NotFoundException(`Vehículo ${vehicleId} no encontrado`);
       }
+
       let basePrice = Number(createSaleDto.basePrice);
 
       if (!basePrice || basePrice <= 0) {
         basePrice = Number(vehicle.price);
       }
-      console.log(basePrice);
+
       if (vehicle.status !== VehicleStatus.AVAILABLE) {
         throw new BadRequestException(
           `El vehículo ${vehicle.vehiclePlate} no está disponible`,
         );
       }
 
+      // 👤 Cliente
       const client = await manager.findOne(Client, {
         where: { id: clientId },
       });
@@ -105,6 +116,7 @@ export class SalesService {
         throw new NotFoundException(`Cliente ${clientId} no encontrado`);
       }
 
+      // 👨‍💼 Usuario
       const user = await manager.findOne(User, {
         where: { id: userId },
       });
@@ -112,9 +124,46 @@ export class SalesService {
         throw new NotFoundException(`Usuario ${userId} no encontrado`);
       }
 
+      // 📅 Fecha
       const parsedDate = saleDate ? new Date(saleDate) : new Date();
       if (isNaN(parsedDate.getTime())) {
         throw new BadRequestException('Fecha inválida');
+      }
+
+      // 💸 Descuento
+      const discount = Number(createSaleDto.discount ?? 0);
+      if (discount < 0) {
+        throw new BadRequestException('El descuento no puede ser negativo');
+      }
+
+      // 🧾 Transferencia
+      const parsedTransferPercentage = Number(transferPercentage ?? 0);
+      if (parsedTransferPercentage < 0) {
+        throw new BadRequestException(
+          'El porcentaje de transferencia no puede ser negativo',
+        );
+      }
+
+      // ⚠️ Se calcula sobre basePrice - discount (más realista)
+      const transferAmount =
+        ((basePrice - discount) * parsedTransferPercentage) / 100;
+
+      // 🏢 Gastos administrativos
+      const parsedAdminExpenses = Number(adminExpenses ?? 0);
+      if (parsedAdminExpenses < 0) {
+        throw new BadRequestException(
+          'Los gastos administrativos no pueden ser negativos',
+        );
+      }
+
+      // 💰 Precio final
+      const finalPrice =
+        basePrice - discount + transferAmount + parsedAdminExpenses;
+
+      if (finalPrice <= 0) {
+        throw new BadRequestException(
+          'El precio final no puede ser menor o igual a 0',
+        );
       }
 
       let totalPaid = 0;
@@ -146,13 +195,13 @@ export class SalesService {
           );
         }
 
-        if (tradeInVehicle.price > basePrice) {
+        if (Number(tradeInVehicle.price) > finalPrice) {
           throw new BadRequestException(
-            `El valor del vehículo entregado no puede exceder el precio base`,
+            `El valor del vehículo entregado no puede exceder el precio final`,
           );
         }
 
-        totalPaid += tradeInVehicle.price;
+        totalPaid += Number(tradeInVehicle.price);
       }
 
       // 🧾 Crear venta
@@ -163,24 +212,27 @@ export class SalesService {
         type: type || SaleType.SALE,
         status: SaleStatus.DRAFT,
         basePrice,
-        finalPrice: basePrice,
+        finalPrice,
         totalPaid,
         saleDate: parsedDate,
+        discount,
+        transferPercentage: parsedTransferPercentage,
+        transferAmount,
+        adminExpenses: parsedAdminExpenses,
       });
 
       await manager.save(sale);
 
-      // 🚘 Crear TradeIn si existe
+      // 🚘 Crear TradeIn
       if (tradeInVehicle) {
         const tradeIn = manager.create(TradeIn, {
           vehicle: tradeInVehicle,
           sale,
-          agreedValue: tradeInVehicle.price,
+          tradeInValue: tradeInVehicle.price,
         });
 
         await manager.save(tradeIn);
 
-        // Cambiar estado del vehículo entregado
         tradeInVehicle.status = VehicleStatus.ISPECTION;
         await manager.save(tradeInVehicle);
       }
@@ -547,7 +599,7 @@ export class SalesService {
     }
 
     // Si hay trade-in agregado, pasar a RESERVED
-    if (sale.tradeIns && sale.tradeIns.length > 0) {
+    if (sale.tradeIns.length > 0) {
       return SaleStatus.RESERVED;
     }
 
@@ -589,7 +641,7 @@ export class SalesService {
     }
 
     // Sin pagos confirmados
-    if (sale.tradeIns && sale.tradeIns.length > 0) {
+    if (sale.tradeIns.length > 0) {
       return SaleStatus.RESERVED;
     }
 

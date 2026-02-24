@@ -77,6 +77,15 @@ export class Sale {
   @Column({ name: 'final_price', type: 'decimal', precision: 10, scale: 2 })
   finalPrice: number;
 
+  @Column({
+    name: 'discount',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  discount: number;
+
   // Monto total pagado (suma de pagos confirmados)
   @Column({
     name: 'total_paid',
@@ -86,9 +95,37 @@ export class Sale {
     default: 0,
   })
   totalPaid: number;
+  // Porcentaje de transferencia (ej: 1.5%)
+  @Column({
+    name: 'transfer_percentage',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
+  transferPercentage: number;
 
-  @Column({ name: 'sale_date', type: 'timestamp' })
-  saleDate: Date;
+  // Monto calculado de la transferencia
+  @Column({
+    name: 'transfer_amount',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  transferAmount: number;
+
+  // Gastos administrativos
+  @Column({
+    name: 'admin_expenses',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
+  adminExpenses: number;
+  @Column({ name: 'sale_date', type: 'timestamp', nullable: true })
+  saleDate?: Date;
 
   @OneToMany(() => Payment, (p) => p.sale, { cascade: true })
   payments: Payment[];
@@ -104,6 +141,8 @@ export class Sale {
   updatedAt: Date;
   @Expose()
   get pendingBalance(): number {
-    return Number(this.finalPrice) - Number(this.totalPaid);
+    const final = Number(this.finalPrice ?? 0);
+    const paid = Number(this.totalPaid ?? 0);
+    return Math.max(final - paid, 0);
   }
 }

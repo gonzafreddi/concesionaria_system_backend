@@ -20,7 +20,8 @@ export enum VehicleStatus {
   AVAILABLE = 'AVAILABLE',
   RESERVED = 'RESERVED',
   SOLD = 'SOLD',
-  ISPECTION = 'INSPECTION',
+  INSPECTION = 'INSPECTION',
+  PRESALE = 'PRESALE',
 }
 
 @Entity('vehicles')

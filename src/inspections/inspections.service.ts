@@ -10,6 +10,8 @@ import { UpdateInspectionDto } from './dto/update-inspection.dto';
 import { Inspection } from './entities/inspection.entity';
 import { Client } from 'src/clients/entities/client.entity';
 import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
+import { VehicleStatus } from 'src/vehicles/entities/vehicle.entity';
+import { VehiclesService } from 'src/vehicles/vehicles.service';
 
 @Injectable()
 export class InspectionsService {
@@ -20,6 +22,7 @@ export class InspectionsService {
     private readonly clientRepository: Repository<Client>,
     @InjectRepository(Vehicle)
     private readonly vehicleRepository: Repository<Vehicle>,
+    private readonly vehiclesService: VehiclesService,
   ) {}
 
   /**
@@ -37,72 +40,20 @@ export class InspectionsService {
    */
   async create(createInspectionDto: CreateInspectionDto): Promise<Inspection> {
     try {
-      // Validar que el cliente existe
-      if (createInspectionDto.clientId) {
-        const client = await this.clientRepository.findOne({
-          where: { id: createInspectionDto.clientId as number },
-        });
-        if (!client) {
-          throw new NotFoundException(
-            `Cliente con ID ${createInspectionDto.clientId} no encontrado`,
-          );
-        }
-      }
+      const { clientId, vehicleId, ...inspectionData } = createInspectionDto;
 
-      // Validar que el vehículo existe
-      if (createInspectionDto.vehicleId) {
-        const vehicle = await this.vehicleRepository.findOne({
-          where: { id: createInspectionDto.vehicleId as number },
-        });
-        if (!vehicle) {
-          throw new NotFoundException(
-            `Vehículo con ID ${createInspectionDto.vehicleId} no encontrado`,
-          );
-        }
-      }
+      const inspection = this.inspectionRepository.create({
+        ...inspectionData,
+        client: clientId ? { id: clientId } : undefined,
+        vehicle: vehicleId ? { id: vehicleId } : undefined,
+      });
+      await this.inspectionRepository.save(inspection);
 
-      // Validar que las puntuaciones estén dentro del rango (1-10)
-      if (
-        createInspectionDto.paintAndBody &&
-        (createInspectionDto.paintAndBody < 1 ||
-          createInspectionDto.paintAndBody > 10)
-      ) {
-        throw new BadRequestException(
-          'La puntuación de pintura y chapa debe estar entre 1 y 10',
-        );
-      }
+      // si se proporciona una inspeccion cambimos al estado de pre venta PRESALE
+      await this.vehiclesService.changeStatus(vehicleId, VehicleStatus.PRESALE);
 
-      if (
-        createInspectionDto.interiorCondition &&
-        (createInspectionDto.interiorCondition < 1 ||
-          createInspectionDto.interiorCondition > 10)
-      ) {
-        throw new BadRequestException(
-          'La puntuación de condición interior debe estar entre 1 y 10',
-        );
-      }
-
-      // Validar porcentaje de cubiertas
-      if (
-        createInspectionDto.tiresPercentage &&
-        (createInspectionDto.tiresPercentage < 0 ||
-          createInspectionDto.tiresPercentage > 100)
-      ) {
-        throw new BadRequestException(
-          'El porcentaje de cubiertas debe estar entre 0 y 100',
-        );
-      }
-
-      // Crear la inspección
-      const inspection = this.inspectionRepository.create(createInspectionDto);
-      return await this.inspectionRepository.save(inspection);
+      return inspection;
     } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
       throw new BadRequestException(
         `Error al crear la inspección: ${this.getErrorMessage(error)}`,
       );
@@ -166,7 +117,7 @@ export class InspectionsService {
         updateInspectionDto.clientId !== inspection.client.id
       ) {
         const client = await this.clientRepository.findOne({
-          where: { id: updateInspectionDto.clientId as number },
+          where: { id: updateInspectionDto.clientId },
         });
         if (!client) {
           throw new NotFoundException(
@@ -181,7 +132,7 @@ export class InspectionsService {
         updateInspectionDto.vehicleId !== inspection.vehicle.id
       ) {
         const vehicle = await this.vehicleRepository.findOne({
-          where: { id: updateInspectionDto.vehicleId as number },
+          where: { id: updateInspectionDto.vehicleId },
         });
         if (!vehicle) {
           throw new NotFoundException(

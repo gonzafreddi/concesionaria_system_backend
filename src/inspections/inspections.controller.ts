@@ -116,6 +116,7 @@ export class InspectionsController {
     description: 'Datos inválidos o cliente/vehículo no encontrado',
   })
   create(@Body() createInspectionDto: CreateInspectionDto) {
+    console.log('Received CreateInspectionDto:', createInspectionDto);
     return this.inspectionsService.create(createInspectionDto);
   }
 

@@ -65,7 +65,7 @@ export class Vehicle {
   @Column({
     type: 'enum',
     enum: VehicleStatus,
-    default: VehicleStatus.ISPECTION,
+    default: VehicleStatus.INSPECTION,
   })
   status: VehicleStatus;
 

@@ -233,7 +233,7 @@ export class SalesService {
 
         await manager.save(tradeIn);
 
-        tradeInVehicle.status = VehicleStatus.ISPECTION;
+        tradeInVehicle.status = VehicleStatus.INSPECTION;
         await manager.save(tradeInVehicle);
       }
 

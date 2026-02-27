@@ -122,8 +122,8 @@ export class Inspection {
   estimatedMarketValue: number;
 
   // Valor de toma
-  @Column({ type: 'decimal', precision: 12, scale: 2 })
-  tradeInValue: number;
+  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
+  tradeInValue?: number;
 
   // Fecha estimada de ingreso
   @Column({ type: 'date', nullable: true })

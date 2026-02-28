@@ -56,8 +56,31 @@ export class CreatePreSaleAestheticDto {
   licensePlateInstall: boolean;
 
   @ApiProperty({
+    description: 'General paint inspection completed',
+    example: true,
+  })
+  @IsBoolean()
+  generalPaintInspection: boolean;
+
+  @ApiProperty({ description: 'Bumper touch up completed', example: false })
+  @IsBoolean()
+  bumperTouchUp: boolean;
+
+  @ApiProperty({ description: 'Optics polishing completed', example: true })
+  @IsBoolean()
+  opticsPolished: boolean;
+
+  @ApiProperty({ description: 'Minor dent repair completed', example: true })
+  @IsBoolean()
+  minorDentRepair: boolean;
+
+  @ApiProperty({ description: 'Final polish completed', example: true })
+  @IsBoolean()
+  finalPolish: boolean;
+
+  @ApiProperty({
     description: 'Additional observations',
-    example: 'Vehicle looks pristine, ready for sale',
+    example: 'Paint condition excellent, no scratches',
     required: false,
   })
   @IsOptional()

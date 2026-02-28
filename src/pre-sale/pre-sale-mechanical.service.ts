@@ -6,6 +6,7 @@ import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
 import { CreatePreSaleMechanicalDto } from './dto/create-pre-sale-mechanical.dto';
 import { UpdatePreSaleMechanicalDto } from './dto/update-pre-sale-mechanical.dto';
 import { PreSaleStatus } from './entities/pre-sale-status.enum';
+import { VehiclesService } from 'src/vehicles/vehicles.service';
 
 @Injectable()
 export class PreSaleMechanicalService {
@@ -14,6 +15,7 @@ export class PreSaleMechanicalService {
     private repository: Repository<PreSaleMechanical>,
     @InjectRepository(Vehicle)
     private vehicleRepository: Repository<Vehicle>,
+    private readonly vehiclesService: VehiclesService,
   ) {}
 
   async create(dto: CreatePreSaleMechanicalDto): Promise<PreSaleMechanical> {
@@ -31,7 +33,9 @@ export class PreSaleMechanicalService {
       status: this.resolveStatus(completed, dto.status),
       vehicle,
     });
-    return this.repository.save(entity);
+    const saved = await this.repository.save(entity);
+    await this.vehiclesService.checkPreSaleCompletion(dto.vehicleId);
+    return saved;
   }
 
   async findAll(): Promise<PreSaleMechanical[]> {
@@ -54,11 +58,18 @@ export class PreSaleMechanicalService {
     id: number,
     dto: UpdatePreSaleMechanicalDto,
   ): Promise<PreSaleMechanical> {
-    const current = await this.repository.findOneBy({ id });
+    const current = await this.repository.findOne({
+      where: { id },
+      relations: ['vehicle'],
+    });
     if (!current)
       throw new NotFoundException(`PreSaleMechanical with id ${id} not found`);
 
-    const completed = this.resolveCompleted(dto.completed, dto.status, current.completed);
+    const completed = this.resolveCompleted(
+      dto.completed,
+      dto.status,
+      current.completed,
+    );
     const entity = await this.repository.preload({
       id,
       ...dto,
@@ -67,7 +78,9 @@ export class PreSaleMechanicalService {
     });
     if (!entity)
       throw new NotFoundException(`PreSaleMechanical with id ${id} not found`);
-    return this.repository.save(entity);
+    const saved = await this.repository.save(entity);
+    await this.vehiclesService.checkPreSaleCompletion(current.vehicle.id);
+    return saved;
   }
 
   async remove(id: number): Promise<void> {

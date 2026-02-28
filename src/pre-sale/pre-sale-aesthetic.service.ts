@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { PreSaleAesthetic } from './entities/pre_sale_aesthetic.entity';
 import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
 import { PreSaleStatus } from './entities/pre-sale-status.enum';
+import { VehiclesService } from 'src/vehicles/vehicles.service';
 
 @Injectable()
 export class PreSaleAestheticService {
@@ -15,6 +16,7 @@ export class PreSaleAestheticService {
     private repository: Repository<PreSaleAesthetic>,
     @InjectRepository(Vehicle)
     private vehicleRepository: Repository<Vehicle>,
+    private readonly vehiclesService: VehiclesService,
   ) {}
 
   async create(
@@ -41,7 +43,11 @@ export class PreSaleAestheticService {
         ),
         vehicle,
       });
-      return await this.repository.save(entity);
+      const saved = await this.repository.save(entity);
+      await this.vehiclesService.checkPreSaleCompletion(
+        createPreSaleAestheticDto.vehicleId,
+      );
+      return saved;
     } catch (error) {
       throw error;
     }
@@ -65,7 +71,10 @@ export class PreSaleAestheticService {
     id: number,
     updatePreSaleAestheticDto: UpdatePreSaleAestheticDto,
   ): Promise<PreSaleAesthetic> {
-    const current = await this.repository.findOneBy({ id });
+    const current = await this.repository.findOne({
+      where: { id },
+      relations: ['vehicle'],
+    });
     if (!current)
       throw new NotFoundException(`PreSaleAesthetic with id ${id} not found`);
 
@@ -83,7 +92,9 @@ export class PreSaleAestheticService {
     });
     if (!entity)
       throw new NotFoundException(`PreSaleAesthetic with id ${id} not found`);
-    return this.repository.save(entity);
+    const saved = await this.repository.save(entity);
+    await this.vehiclesService.checkPreSaleCompletion(current.vehicle.id);
+    return saved;
   }
 
   async remove(id: number): Promise<void> {

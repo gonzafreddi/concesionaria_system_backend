@@ -63,7 +63,6 @@ export class VehiclesService {
         'preSaleAesthetic',
         'preSaleDocumentation',
         'preSaleMechanical',
-        'preSaleBodywork',
       ],
     });
     if (!vehicle) {

@@ -22,6 +22,12 @@ export class PreSaleAesthetic {
   @Column({ default: false }) detailing: boolean;
   @Column({ default: false }) badgesAndAccessories: boolean;
   @Column({ default: false }) licensePlateInstall: boolean;
+
+  @Column({ default: false }) generalPaintInspection: boolean;
+  @Column({ default: false }) bumperTouchUp: boolean;
+  @Column({ default: false }) opticsPolished: boolean;
+  @Column({ default: false }) minorDentRepair: boolean;
+  @Column({ default: false }) finalPolish: boolean;
   @Column({ default: false }) completed: boolean;
   @Column({ type: 'enum', enum: PreSaleStatus, default: PreSaleStatus.DRAFT })
   status: PreSaleStatus;

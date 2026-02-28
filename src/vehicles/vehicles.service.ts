@@ -5,6 +5,7 @@ import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { Vehicle } from './entities/vehicle.entity';
 import { VehicleStatus } from './entities/vehicle.entity';
+import { PreSaleStatus } from 'src/pre-sale/entities/pre-sale-status.enum';
 @Injectable()
 export class VehiclesService {
   constructor(
@@ -53,5 +54,30 @@ export class VehiclesService {
     });
 
     return vehicles;
+  }
+
+  async checkPreSaleCompletion(vehicleId: number) {
+    const vehicle = await this.vehiclesRepository.findOne({
+      where: { id: vehicleId },
+      relations: [
+        'preSaleAesthetic',
+        'preSaleDocumentation',
+        'preSaleMechanical',
+        'preSaleBodywork',
+      ],
+    });
+    if (!vehicle) {
+      throw new NotFoundException('Vehicle not found');
+    }
+    const allCompleted =
+      vehicle?.preSaleAesthetic?.status === PreSaleStatus.COMPLETED &&
+      vehicle?.preSaleDocumentation?.status === PreSaleStatus.COMPLETED &&
+      vehicle?.preSaleMechanical?.status === PreSaleStatus.COMPLETED;
+
+    if (allCompleted) {
+      vehicle.status = VehicleStatus.AVAILABLE;
+      await this.vehiclesRepository.save(vehicle);
+    }
+    return allCompleted;
   }
 }

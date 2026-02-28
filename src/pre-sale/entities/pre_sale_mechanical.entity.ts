@@ -6,6 +6,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
+import { PreSaleStatus } from './pre-sale-status.enum';
 @Entity()
 export class PreSaleMechanical {
   @PrimaryGeneratedColumn()
@@ -30,6 +31,8 @@ export class PreSaleMechanical {
   @Column({ default: false }) fluidLevelsCheck: boolean;
   @Column({ default: false }) roadTestAndDiagnostics: boolean;
   @Column({ default: false }) completed: boolean;
+  @Column({ type: 'enum', enum: PreSaleStatus, default: PreSaleStatus.DRAFT })
+  status: PreSaleStatus;
 
   @Column({ nullable: true })
   observations?: string;

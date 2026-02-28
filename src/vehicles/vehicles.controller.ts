@@ -12,6 +12,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
+import { get } from 'http';
 
 @ApiTags('vehicles')
 @Controller('vehicles')
@@ -49,5 +50,12 @@ export class VehiclesController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.vehiclesService.remove(id);
+  }
+  @ApiOperation({
+    summary: 'Check if pre-sale process is completed for a vehicle',
+  })
+  @Get('/:id/check-presale')
+  async checkPreSaleCompletion(@Param('id', ParseIntPipe) id: number) {
+    return this.vehiclesService.checkPreSaleCompletion(id);
   }
 }

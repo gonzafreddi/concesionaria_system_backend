@@ -1,5 +1,12 @@
-import { IsBoolean, IsOptional, IsString, IsNumber } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsEnum,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PreSaleStatus } from '../entities/pre-sale-status.enum';
 
 export class CreatePreSaleDocumentationDto {
   @ApiProperty({
@@ -57,6 +64,15 @@ export class CreatePreSaleDocumentationDto {
   })
   @IsBoolean()
   completed: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Checklist status',
+    enum: PreSaleStatus,
+    example: PreSaleStatus.DRAFT,
+  })
+  @IsOptional()
+  @IsEnum(PreSaleStatus)
+  status?: PreSaleStatus;
 
   @ApiProperty({
     description: 'Extra observations',

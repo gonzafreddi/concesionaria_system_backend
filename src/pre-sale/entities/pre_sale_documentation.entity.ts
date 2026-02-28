@@ -6,6 +6,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
+import { PreSaleStatus } from './pre-sale-status.enum';
 @Entity()
 export class PreSaleDocumentation {
   @PrimaryGeneratedColumn()
@@ -22,6 +23,8 @@ export class PreSaleDocumentation {
   @Column({ default: false }) autoPartsEngraving: boolean;
   @Column({ default: false }) manualsAndKeys: boolean;
   @Column({ default: false }) completed: boolean;
+  @Column({ type: 'enum', enum: PreSaleStatus, default: PreSaleStatus.DRAFT })
+  status: PreSaleStatus;
 
   @Column({ nullable: true })
   extraObservations?: string;
@@ -30,3 +33,4 @@ export class PreSaleDocumentation {
   @JoinColumn()
   vehicle: Vehicle;
 }
+//proximo paso crear el servicio para el cambio de estado automatico

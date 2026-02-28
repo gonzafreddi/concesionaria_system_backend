@@ -5,6 +5,7 @@ import { PreSaleMechanical } from './entities/pre_sale_mechanical.entity';
 import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
 import { CreatePreSaleMechanicalDto } from './dto/create-pre-sale-mechanical.dto';
 import { UpdatePreSaleMechanicalDto } from './dto/update-pre-sale-mechanical.dto';
+import { PreSaleStatus } from './entities/pre-sale-status.enum';
 
 @Injectable()
 export class PreSaleMechanicalService {
@@ -22,7 +23,14 @@ export class PreSaleMechanicalService {
     if (!vehicle) {
       throw new NotFoundException(`Vehicle with id ${dto.vehicleId} not found`);
     }
-    const entity = this.repository.create({ ...dto, vehicle });
+    const completed =
+      dto.completed ?? dto.status === PreSaleStatus.COMPLETED;
+    const entity = this.repository.create({
+      ...dto,
+      completed,
+      status: this.resolveStatus(completed, dto.status),
+      vehicle,
+    });
     return this.repository.save(entity);
   }
 
@@ -46,7 +54,17 @@ export class PreSaleMechanicalService {
     id: number,
     dto: UpdatePreSaleMechanicalDto,
   ): Promise<PreSaleMechanical> {
-    const entity = await this.repository.preload({ id, ...dto });
+    const current = await this.repository.findOneBy({ id });
+    if (!current)
+      throw new NotFoundException(`PreSaleMechanical with id ${id} not found`);
+
+    const completed = this.resolveCompleted(dto.completed, dto.status, current.completed);
+    const entity = await this.repository.preload({
+      id,
+      ...dto,
+      completed,
+      status: this.resolveStatus(completed, dto.status),
+    });
     if (!entity)
       throw new NotFoundException(`PreSaleMechanical with id ${id} not found`);
     return this.repository.save(entity);
@@ -61,6 +79,24 @@ export class PreSaleMechanicalService {
 
   async isCompleted(id: number): Promise<boolean> {
     const entity = await this.findOneByVehicleId(id);
-    return entity.completed;
+    return entity.status === PreSaleStatus.COMPLETED;
+  }
+
+  private resolveStatus(
+    completed?: boolean,
+    status?: PreSaleStatus,
+  ): PreSaleStatus {
+    if (status) return status;
+    return completed ? PreSaleStatus.COMPLETED : PreSaleStatus.DRAFT;
+  }
+
+  private resolveCompleted(
+    completed: boolean | undefined,
+    status: PreSaleStatus | undefined,
+    current: boolean,
+  ): boolean {
+    if (typeof completed === 'boolean') return completed;
+    if (status) return status === PreSaleStatus.COMPLETED;
+    return current;
   }
 }

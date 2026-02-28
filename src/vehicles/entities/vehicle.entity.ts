@@ -6,11 +6,16 @@ import {
   OneToMany,
   JoinColumn,
   ManyToOne,
+  OneToOne,
 } from 'typeorm';
 import { Quote } from '../../quotes/entities/quote.entity';
 import { Sale } from '../../sales/entities/sale.entity';
 import { VehicleAcquisitionTypes } from './vehicle_acquisition_types';
 import { Inspection } from '../../inspections/entities/inspection.entity';
+import { PreSaleAesthetic } from 'src/pre-sale/entities/pre_sale_aesthetic.entity';
+import { PreSaleDocumentation } from 'src/pre-sale/entities/pre_sale_documentation.entity';
+import { PreSaleBodywork } from 'src/pre-sale/entities/pre_sale_bodywork.entity';
+import { PreSaleMechanical } from 'src/pre-sale/entities/pre_sale_mechanical.entity';
 export enum VehicleType {
   NEW = 'NEW',
   USED = 'USED',
@@ -88,4 +93,25 @@ export class Vehicle {
 
   @OneToMany(() => Inspection, (i: Inspection) => i.vehicle)
   inspections: Inspection[];
+
+  @OneToOne(
+    () => PreSaleAesthetic,
+    (preSaleAesthetic) => preSaleAesthetic.vehicle,
+  )
+  preSaleAesthetic: PreSaleAesthetic;
+
+  @OneToOne(
+    () => PreSaleDocumentation,
+    (preSaleDocumentation) => preSaleDocumentation.vehicle,
+  )
+  preSaleDocumentation: PreSaleDocumentation;
+
+  @OneToOne(() => PreSaleBodywork, (preSaleBodywork) => preSaleBodywork.vehicle)
+  preSaleBodywork: PreSaleBodywork;
+
+  @OneToOne(
+    () => PreSaleMechanical,
+    (preSaleMechanical) => preSaleMechanical.vehicle,
+  )
+  preSaleMechanical: PreSaleMechanical;
 }

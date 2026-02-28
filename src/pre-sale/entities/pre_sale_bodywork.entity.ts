@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 
 import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
+import { PreSaleStatus } from './pre-sale-status.enum';
 
 @Entity()
 export class PreSaleBodywork {
@@ -29,6 +30,8 @@ export class PreSaleBodywork {
   finalPolish: boolean;
 
   @Column({ default: false }) completed: boolean;
+  @Column({ type: 'enum', enum: PreSaleStatus, default: PreSaleStatus.DRAFT })
+  status: PreSaleStatus;
 
   @Column({ nullable: true })
   observations?: string;

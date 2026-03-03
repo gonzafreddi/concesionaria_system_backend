@@ -6,6 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsInt,
+  IsDateString,
 } from 'class-validator';
 import { VehicleType, VehicleStatus } from '../entities/vehicle.entity';
 
@@ -58,6 +59,11 @@ export class CreateVehicleDto {
   @IsOptional()
   @IsNumber()
   acquisitionPrice?: number;
+
+  @ApiProperty({ required: false, example: '2026-03-03' })
+  @IsOptional()
+  @IsDateString()
+  entryDate?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()

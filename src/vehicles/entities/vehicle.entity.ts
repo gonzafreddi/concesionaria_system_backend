@@ -67,6 +67,9 @@ export class Vehicle {
   @Column({ type: 'text', nullable: true })
   technicalSpecifications: string;
 
+  @Column({ type: 'date', nullable: true })
+  entryDate: Date | null;
+
   @Column({
     type: 'enum',
     enum: VehicleStatus,

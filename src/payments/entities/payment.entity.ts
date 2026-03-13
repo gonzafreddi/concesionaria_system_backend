@@ -5,22 +5,23 @@ import {
   ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { Sale } from '../../sales/entities/sale.entity';
 
 /**
  * Payment Entity
- * 
+ *
  * Registra cada pago realizado en una operación.
- * 
+ *
  * Estado:
  * - PENDING: Pago registrado pero no confirmado
  * - CONFIRMED: Pago validado/recibido (aumenta totalPaid en Sale)
  * - REJECTED: Pago rechazado
- * 
+ *
  * NO se usan booleanos como isPaid.
  * El estado de la venta se calcula desde la suma de pagos CONFIRMED.
- * 
+ *
  * Solo se permiten nuevos pagos si Sale.status !== DELIVERED/SOLD cerrado
  */
 
@@ -44,6 +45,7 @@ export class Payment {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Index()
   @ManyToOne(() => Sale, (s) => s.payments, { onDelete: 'CASCADE' })
   sale: Sale;
 
@@ -72,4 +74,3 @@ export class Payment {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 }
-

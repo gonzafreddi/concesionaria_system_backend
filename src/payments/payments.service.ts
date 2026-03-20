@@ -8,6 +8,7 @@ import { Repository, DataSource, QueryRunner } from 'typeorm';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Sale, SaleStatus } from '../sales/entities/sale.entity';
+import { SalesService } from 'src/sales/sales.service';
 
 /**
  * PAYMENTS SERVICE - Gestión de pagos
@@ -23,6 +24,7 @@ export class PaymentsService {
     @InjectRepository(Sale)
     private readonly saleRepository: Repository<Sale>,
     private readonly dataSource: DataSource,
+    private readonly saleService: SalesService,
   ) {}
 
   /**
@@ -36,7 +38,7 @@ export class PaymentsService {
    * El pago se crea con status PENDING.
    */
   async createPayment(createPaymentDto: CreatePaymentDto): Promise<Payment> {
-    const { saleId, amount, method, notes } = createPaymentDto;
+    const { saleId, amount, method, notes, currency } = createPaymentDto;
 
     // Validar que la venta existe
     const sale = await this.saleRepository.findOne({ where: { id: saleId } });
@@ -54,6 +56,9 @@ export class PaymentsService {
       );
     }
     //Si la venta esta en DRAFT, se cambia a RESERVED al agregar un pago
+    if (sale.status === SaleStatus.DRAFT) {
+      await this.saleService.reserve(sale.id);
+    }
 
     // Validar monto positivo
     if (amount <= 0) {
@@ -67,6 +72,7 @@ export class PaymentsService {
       method,
       notes: notes || null,
       status: PaymentStatus.PENDING,
+      currency: currency,
     });
 
     return await this.paymentRepository.save(payment);

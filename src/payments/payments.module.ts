@@ -4,9 +4,10 @@ import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
 import { Payment } from './entities/payment.entity';
 import { Sale } from '../sales/entities/sale.entity';
+import { SalesModule } from '../sales/sales.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Payment, Sale])],
+  imports: [TypeOrmModule.forFeature([Payment, Sale]), SalesModule],
   controllers: [PaymentsController],
   providers: [PaymentsService],
   exports: [PaymentsService],

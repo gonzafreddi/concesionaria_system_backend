@@ -38,6 +38,7 @@ export class PaymentsController {
   @ApiResponse({ status: 404, description: 'Venta no encontrada' })
   @ApiBody({ type: CreatePaymentDto })
   create(@Body() createPaymentDto: CreatePaymentDto): Promise<Payment> {
+    console.log('Received CreatePaymentDto:', createPaymentDto);
     return this.paymentsService.createPayment(createPaymentDto);
   }
 

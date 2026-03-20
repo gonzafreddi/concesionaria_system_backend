@@ -40,6 +40,12 @@ export enum PaymentMethod {
   CHECK = 'CHECK',
 }
 
+export enum Currency {
+  ARS = 'ARS',
+  USD = 'USD',
+  EUR = 'EUR',
+}
+
 @Entity('payments')
 export class Payment {
   @PrimaryGeneratedColumn()
@@ -61,6 +67,9 @@ export class Payment {
     default: PaymentStatus.PENDING,
   })
   status: PaymentStatus;
+
+  @Column({ type: 'enum', enum: Currency })
+  currency: Currency;
 
   @Column({ name: 'paid_at', type: 'timestamp', nullable: true })
   paidAt: Date | null;

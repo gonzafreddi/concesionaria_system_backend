@@ -13,7 +13,6 @@ import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 import { User } from '../../users/entities/user.entity';
 import { Payment } from '../../payments/entities/payment.entity';
 import { TradeIn } from './trade-in.entity';
-import { Expose } from 'class-transformer';
 
 /**
  * Sale Entity
@@ -63,6 +62,7 @@ export enum TransferStatus {
 
 @Entity('sales')
 export class Sale {
+  constructor() {}
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -174,16 +174,8 @@ export class Sale {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
-  @Expose()
-  get pendingBalance(): number {
-    const final = Number(this.finalPrice ?? 0);
-    const paid = Number(this.totalPaid ?? 0);
-    const tradeInsTotal = Array.isArray(this.tradeIns)
-      ? this.tradeIns.reduce(
-          (total, tradeIn) => total + Number(tradeIn.tradeInValue ?? 0),
-          0,
-        )
-      : 0;
-    return Math.max(final - paid - tradeInsTotal, 0);
-  }
+  // @Expose()
+  // get pendingBalance(): number {
+  //   sale;
+  // }
 }

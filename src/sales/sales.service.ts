@@ -178,7 +178,7 @@ export class SalesService {
       }
 
       // totalPaid representa solo pagos monetarios confirmados
-      let totalPaid = 0;
+      const totalPaid = 0;
       let tradeInVehicle: Vehicle | null = null;
 
       // 🚘 Trade-in
@@ -265,11 +265,22 @@ export class SalesService {
   /**
    * FIND ALL - Lista todas las operaciones
    */
-  findAll() {
-    return this.salesRepository.find({
+  async findAll() {
+    const sales = await this.salesRepository.find({
       relations: ['client', 'vehicle', 'user', 'quote', 'payments', 'tradeIns'],
       order: { id: 'DESC' },
     });
+
+    return Promise.all(sales.map((sale) => this.mapToResponse(sale)));
+  }
+
+  async mapToResponse(sale: Sale) {
+    return {
+      ...sale,
+      pendingBalance: await this.saleAccountBalanceService.getPendingBalance(
+        sale.id,
+      ),
+    };
   }
 
   /**
@@ -289,7 +300,12 @@ export class SalesService {
       ],
     });
     if (!sale) throw new NotFoundException(`Operación ${id} no encontrada`);
-    return sale;
+    const pendingBalance =
+      await this.saleAccountBalanceService.getPendingBalance(id);
+    return {
+      ...sale,
+      pendingBalance,
+    };
   }
 
   async getPendingBalance(id: number) {

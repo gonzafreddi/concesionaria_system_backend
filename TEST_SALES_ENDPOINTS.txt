@@ -1,0 +1,216 @@
+PRUEBAS DE ENDPOINTS - SALES / PAYMENTS
+
+IMPORTANTE
+- Antes de probar, correr la migracion SQL:
+  migrations/20260320_sales_status_workflow_migration.sql
+- Luego levantar la app.
+- Si algunos endpoints como trade-ins o deliver no estan publicados en el controller,
+  hay que agregarlos antes de probar ese paso.
+
+--------------------------------------------------
+1. CREAR UNA VENTA
+--------------------------------------------------
+
+POST /sales
+Content-Type: application/json
+
+{
+  "clientId": 1,
+  "vehicleId": 10,
+  "userId": 2,
+  "type": "SALE",
+  "basePrice": 10000000,
+  "discount": 500000,
+  "transferPercentage": 1.5,
+  "adminExpenses": 100000
+}
+
+Esperado:
+- status = "DRAFT"
+- documentationStatus = "PENDING"
+- transferStatus = "NOT_STARTED"
+
+--------------------------------------------------
+2. VER LA VENTA
+--------------------------------------------------
+
+GET /sales/:id
+
+Esperado:
+- La venta existe
+- status = "DRAFT"
+
+--------------------------------------------------
+3. AGREGAR TRADE-IN
+--------------------------------------------------
+
+POST /sales/:id/trade-ins
+Content-Type: application/json
+
+{
+  "saleId": 1,
+  "vehicleId": 25,
+  "tradeInValue": 2000000
+}
+
+Esperado:
+- status = "PARTIALLY_PAID"
+- El trade-in no modifica finalPrice
+- El trade-in si reduce pendingBalance
+
+--------------------------------------------------
+4. CONSULTAR BALANCE PENDIENTE
+--------------------------------------------------
+
+GET /sales/:id/pending-balance
+
+Esperado:
+- Devuelve:
+  saleId
+  finalPrice
+  tradeInsTotal
+  paymentsTotal
+  pendingBalance
+
+Ejemplo esperado:
+
+{
+  "saleId": 1,
+  "finalPrice": 9742500,
+  "tradeInsTotal": 2000000,
+  "paymentsTotal": 0,
+  "pendingBalance": 7742500
+}
+
+--------------------------------------------------
+5. CREAR PAGO PENDIENTE
+--------------------------------------------------
+
+POST /payments
+Content-Type: application/json
+
+{
+  "saleId": 1,
+  "amount": 3000000,
+  "method": "BANK_TRANSFER",
+  "currency": "ARS",
+  "notes": "anticipo"
+}
+
+Esperado:
+- Se crea el pago con status = "PENDING"
+
+--------------------------------------------------
+6. CONFIRMAR PAGO
+--------------------------------------------------
+
+PATCH /payments/:paymentId/confirm
+
+Esperado:
+- El pago pasa a CONFIRMED
+- totalPaid aumenta
+- La venta sigue en "PARTIALLY_PAID" si todavia falta saldo
+
+--------------------------------------------------
+7. AGREGAR OTRO PAGO PARA CUBRIR EL TOTAL
+--------------------------------------------------
+
+POST /payments
+Content-Type: application/json
+
+{
+  "saleId": 1,
+  "amount": 4742500,
+  "method": "CASH",
+  "currency": "ARS"
+}
+
+Luego confirmar:
+
+PATCH /payments/:paymentId/confirm
+
+Esperado:
+- La venta pasa a "CONFIRMED"
+
+--------------------------------------------------
+8. ACTUALIZAR ESTADOS OPERATIVOS
+--------------------------------------------------
+
+PATCH /sales/:id/workflow-status
+Content-Type: application/json
+
+{
+  "documentationStatus": "IN_PROGRESS",
+  "transferStatus": "IN_PROGRESS"
+}
+
+Esperado:
+- documentationStatus = "IN_PROGRESS"
+- transferStatus = "IN_PROGRESS"
+
+--------------------------------------------------
+9. CANCELAR UNA VENTA
+--------------------------------------------------
+
+PATCH /sales/:id/workflow-status
+Content-Type: application/json
+
+{
+  "status": "CANCELLED"
+}
+
+Esperado:
+- status = "CANCELLED"
+
+Nota:
+- Solo deberia usarse si la venta no esta confirmada
+
+--------------------------------------------------
+10. COMPLETAR LA OPERACION
+--------------------------------------------------
+
+POST /sales/:id/deliver
+
+Esperado:
+- Solo funciona si status = "CONFIRMED"
+- documentationStatus = "COMPLETED"
+- transferStatus = "COMPLETED"
+- Si type = SALE, el vehiculo principal queda en SOLD
+
+--------------------------------------------------
+CASOS NEGATIVOS PARA PROBAR
+--------------------------------------------------
+
+1. Sobrepago
+- Intentar crear un pago que haga que:
+  totalPaid + tradeInsTotal + amount > finalPrice
+- Debe responder 400
+
+2. Pago sobre venta cancelada
+- Si la venta esta en CANCELLED, no debe aceptar nuevos pagos
+
+3. Trade-in sobre venta confirmada
+- Si la venta esta en CONFIRMED, no debe aceptar nuevos trade-ins
+
+4. Cambio manual de status invalido
+- En /sales/:id/workflow-status solo deberia poder setearse status = CANCELLED
+
+--------------------------------------------------
+RESUMEN DE ESTADOS
+--------------------------------------------------
+
+SaleStatus:
+- DRAFT
+- PARTIALLY_PAID
+- CONFIRMED
+- CANCELLED
+
+DocumentationStatus:
+- PENDING
+- IN_PROGRESS
+- COMPLETED
+
+TransferStatus:
+- NOT_STARTED
+- IN_PROGRESS
+- COMPLETED

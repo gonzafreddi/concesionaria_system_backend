@@ -8,7 +8,14 @@ import { Repository, DataSource } from 'typeorm';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { UpdateSaleDto } from './dto/update-sale.dto';
 import { CreateTradeInDto } from './dto/create-trade-in.dto';
-import { Sale, SaleType, SaleStatus } from './entities/sale.entity';
+import { UpdateSaleWorkflowStatusDto } from './dto/update-sale-workflow-status.dto';
+import {
+  Sale,
+  SaleType,
+  SaleStatus,
+  DocumentationStatus,
+  TransferStatus,
+} from './entities/sale.entity';
 import { TradeIn } from './entities/trade-in.entity';
 import { Quote } from '../quotes/entities/quote.entity';
 import { Client } from '../clients/entities/client.entity';
@@ -17,6 +24,8 @@ import { User } from '../users/entities/user.entity';
 import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import { VehiclesService } from 'src/vehicles/vehicles.service';
+import { SaleAccountBalanceService } from './sale-account-balance.service';
+import { SaleBalanceCalculatorService } from './sale-balance-calculator.service';
 
 /**
  * SALES SERVICE - Lógica centralizada
@@ -33,13 +42,13 @@ import { VehiclesService } from 'src/vehicles/vehicles.service';
  *   - Stock aumenta (nuevo vehículo en inventario)
  *   - Vehicle.status: no aplica (es vehículo de entrada)
  *
- * TRANSICIONES DE ESTADO (validadas automáticamente):
- *   DRAFT → RESERVED: Cliente reserva vehículo
- *   RESERVED → SOLD: Primer pago confirmado
- *   SOLD → DELIVERED: Entrega completada
+ * TRANSICIONES DE ESTADO FINANCIERO (validadas automáticamente):
+ *   DRAFT → PARTIALLY_PAID: Hay pagos confirmados o trade-ins, pero resta saldo
+ *   PARTIALLY_PAID → CONFIRMED: La cuenta quedó cubierta
+ *   * → CANCELLED: Cambio manual si la operación se anula
  *
  * NO se permiten cambios de estado desde frontend.
- * El status se actualiza automáticamente según:
+ * El estado financiero se actualiza automáticamente según:
  *   1. Pagos confirmados (totalPaid)
  *   2. Trade-ins agregados (descuentos)
  *   3. Validaciones de negocio
@@ -63,15 +72,17 @@ export class SalesService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private dataSource: DataSource,
-
     private vehiclesService: VehiclesService,
+    private readonly saleAccountBalanceService: SaleAccountBalanceService,
+    private readonly saleBalanceCalculatorService: SaleBalanceCalculatorService,
   ) {}
 
   /**
    * CREATE - Crea nueva operación (SALE o PURCHASE)
    *
-   * Inicia en DRAFT, sin cambiar stock hasta RESERVED.
-   * finalPrice = basePrice (se actualiza con trade-ins)
+   * Inicia en DRAFT.
+   * finalPrice representa el total de la operación y los trade-ins se descuentan
+   * luego del lado del balance pendiente, sin modificar ese valor base.
    */
 
   async create(createSaleDto: CreateSaleDto) {
@@ -166,6 +177,7 @@ export class SalesService {
         );
       }
 
+      // totalPaid representa solo pagos monetarios confirmados
       let totalPaid = 0;
       let tradeInVehicle: Vehicle | null = null;
 
@@ -188,7 +200,7 @@ export class SalesService {
 
         if (
           existingTradeIn &&
-          existingTradeIn.sale.status !== SaleStatus.DELIVERED
+          existingTradeIn.sale.status !== SaleStatus.CANCELLED
         ) {
           throw new BadRequestException(
             `Vehículo de trade-in ya está en otra operación activa`,
@@ -200,8 +212,6 @@ export class SalesService {
             `El valor del vehículo entregado no puede exceder el precio final`,
           );
         }
-
-        totalPaid += Number(tradeInVehicle.price);
       }
 
       // 🧾 Crear venta
@@ -211,6 +221,7 @@ export class SalesService {
         user,
         type: type || SaleType.SALE,
         status: SaleStatus.DRAFT,
+        documentationStatus: DocumentationStatus.PENDING,
         basePrice,
         finalPrice,
         totalPaid,
@@ -219,6 +230,7 @@ export class SalesService {
         transferPercentage: parsedTransferPercentage,
         transferAmount,
         adminExpenses: parsedAdminExpenses,
+        transferStatus: TransferStatus.NOT_STARTED,
       });
 
       await manager.save(sale);
@@ -232,14 +244,19 @@ export class SalesService {
         });
 
         await manager.save(tradeIn);
+        sale.tradeIns = [tradeIn];
+        sale.status = this.calculateSaleStatus(sale);
+        await manager.save(sale);
 
         tradeInVehicle.status = VehicleStatus.INSPECTION;
         await manager.save(tradeInVehicle);
       }
 
       // 🚗 Reservar vehículo principal
-      vehicle.status = VehicleStatus.RESERVED;
-      await manager.save(vehicle);
+      if (sale.type === SaleType.SALE) {
+        vehicle.status = VehicleStatus.RESERVED;
+        await manager.save(vehicle);
+      }
 
       return sale;
     });
@@ -273,6 +290,64 @@ export class SalesService {
     });
     if (!sale) throw new NotFoundException(`Operación ${id} no encontrada`);
     return sale;
+  }
+
+  async getPendingBalance(id: number) {
+    // SalesService actúa como orquestador y delega la lógica específica
+    return this.saleAccountBalanceService.getPendingBalance(id);
+  }
+
+  async updateWorkflowStatus(
+    id: number,
+    updateSaleWorkflowStatusDto: UpdateSaleWorkflowStatusDto,
+  ) {
+    const sale = await this.findOne(id);
+    const { status, documentationStatus, transferStatus } =
+      updateSaleWorkflowStatusDto;
+
+    if (
+      status === undefined &&
+      documentationStatus === undefined &&
+      transferStatus === undefined
+    ) {
+      throw new BadRequestException(
+        'Debe enviar al menos un estado para actualizar',
+      );
+    }
+
+    if (status !== undefined) {
+      if (status !== SaleStatus.CANCELLED) {
+        throw new BadRequestException(
+          'Solo se permite cambiar manualmente el estado financiero a CANCELLED',
+        );
+      }
+
+      if (sale.status === SaleStatus.CONFIRMED) {
+        throw new BadRequestException(
+          'No se puede cancelar una operación ya confirmada',
+        );
+      }
+
+      sale.status = SaleStatus.CANCELLED;
+
+      if (
+        sale.type === SaleType.SALE &&
+        sale.vehicle?.status === VehicleStatus.RESERVED
+      ) {
+        sale.vehicle.status = VehicleStatus.AVAILABLE;
+        await this.vehicleRepository.save(sale.vehicle);
+      }
+    }
+
+    if (documentationStatus !== undefined) {
+      sale.documentationStatus = documentationStatus;
+    }
+
+    if (transferStatus !== undefined) {
+      sale.transferStatus = transferStatus;
+    }
+
+    return this.salesRepository.save(sale);
   }
 
   /**
@@ -317,14 +392,11 @@ export class SalesService {
    * ADD PAYMENT - Registra un nuevo pago y recalcula estado
    *
    * Validaciones:
-   * - Sale no debe estar cerrada (DELIVERED)
+   * - Sale no debe estar cancelada ni confirmada
    * - Monto no puede ser negativo
-   * - totalPaid + amount no puede exceder finalPrice
+   * - pagos confirmados + trade-ins + amount no puede exceder finalPrice
    *
-   * Actualización automática de estado:
-   * - DRAFT → RESERVED: Primer pago confirmado
-   * - RESERVED → SOLD: Si totalPaid >= finalPrice (100% pagado)
-   * - SOLD → DELIVERED: Manual (requiere confirmación de entrega)
+   * El estado financiero no cambia con pagos pendientes.
    */
   async addPayment(createPaymentDto: CreatePaymentDto) {
     const { saleId, amount, method, notes } = createPaymentDto;
@@ -337,16 +409,19 @@ export class SalesService {
       // Obtener sale con lock para transacción
       const sale = await queryRunner.manager.findOne(Sale, {
         where: { id: saleId },
-        relations: ['payments'],
+        relations: ['payments', 'tradeIns'],
       });
 
       if (!sale)
         throw new NotFoundException(`Operación ${saleId} no encontrada`);
 
-      // No permitir pagos en DELIVERED
-      if (sale.status === SaleStatus.DELIVERED) {
+      // No permitir pagos en operaciones cerradas financieramente o canceladas
+      if (
+        sale.status === SaleStatus.CANCELLED ||
+        sale.status === SaleStatus.CONFIRMED
+      ) {
         throw new BadRequestException(
-          'No se pueden agregar pagos a una operación entregada',
+          'No se pueden agregar pagos a una operación cerrada',
         );
       }
 
@@ -354,10 +429,12 @@ export class SalesService {
         throw new BadRequestException('El monto debe ser mayor a 0');
       }
 
-      // No permitir sobre-pagar
-      if (sale.totalPaid + amount > sale.finalPrice) {
+      const tradeInsTotal = this.getTradeInsTotal(sale.tradeIns);
+
+      // No permitir registrar un pago que supere el saldo restante
+      if (sale.totalPaid + tradeInsTotal + amount > sale.finalPrice) {
         throw new BadRequestException(
-          `Monto excede el precio final. Restante: ${sale.finalPrice - sale.totalPaid}`,
+          `Monto excede el precio final. Restante: ${sale.finalPrice - sale.totalPaid - tradeInsTotal}`,
         );
       }
 
@@ -371,11 +448,6 @@ export class SalesService {
       });
 
       await queryRunner.manager.save(payment);
-
-      // Actualizar sale status automáticamente
-      // Nota: El pago está PENDING, pero podría confirmar automáticamente
-      // Esto depende de la lógica: si es confirmado inmediatamente o requiere validación
-      sale.status = this.calculateSaleStatus(sale, amount);
 
       const updatedSale = await queryRunner.manager.save(sale);
 
@@ -395,11 +467,11 @@ export class SalesService {
    * Validaciones:
    * - Vehicle no debe estar en otra SALE activa
    * - tradeInValue no puede exceder finalPrice
-   * - Sale no debe estar cerrada
+   * - Sale no debe estar cancelada ni confirmada
    *
    * Efecto:
-   * - Descuenta del finalPrice
-   * - Recalcula estado automáticamente
+   * - Afecta el saldo pendiente
+   * - Recalcula estado financiero automáticamente
    */
   async addTradeIn(createTradeInDto: CreateTradeInDto) {
     const { saleId, vehicleId, tradeInValue } = createTradeInDto;
@@ -417,9 +489,12 @@ export class SalesService {
       if (!sale)
         throw new NotFoundException(`Operación ${saleId} no encontrada`);
 
-      if (sale.status === SaleStatus.DELIVERED) {
+      if (
+        sale.status === SaleStatus.CANCELLED ||
+        sale.status === SaleStatus.CONFIRMED
+      ) {
         throw new BadRequestException(
-          'No se pueden agregar trade-ins a una operación entregada',
+          'No se pueden agregar trade-ins a una operación cerrada',
         );
       }
 
@@ -439,16 +514,17 @@ export class SalesService {
       if (
         existingTradeIn &&
         existingTradeIn.sale.id !== saleId &&
-        existingTradeIn.sale.status !== SaleStatus.DELIVERED
+        existingTradeIn.sale.status !== SaleStatus.CANCELLED
       ) {
         throw new BadRequestException(
           `Vehículo ya está en trade-in de otra operación activa`,
         );
       }
 
-      if (tradeInValue > sale.finalPrice) {
+      const tradeInsTotal = this.getTradeInsTotal(sale.tradeIns);
+      if (tradeInValue + tradeInsTotal + sale.totalPaid > sale.finalPrice) {
         throw new BadRequestException(
-          `Valuación excede precio final. Máximo: ${sale.finalPrice}`,
+          `Valuación excede precio final. Máximo: ${sale.finalPrice - sale.totalPaid - tradeInsTotal}`,
         );
       }
 
@@ -461,9 +537,11 @@ export class SalesService {
 
       await queryRunner.manager.save(tradeIn);
 
-      // Actualizar finalPrice (descuento)
-      sale.finalPrice = Math.max(0, sale.finalPrice - tradeInValue);
-      sale.status = this.calculateSaleStatus(sale, 0);
+      // El finalPrice no cambia; recalculamos solo el estado financiero
+      sale.tradeIns = [...sale.tradeIns, tradeIn];
+      sale.status = this.calculateSaleStatus(sale);
+      vehicle.status = VehicleStatus.INSPECTION;
+      await queryRunner.manager.save(vehicle);
 
       const updatedSale = await queryRunner.manager.save(sale);
 
@@ -478,10 +556,9 @@ export class SalesService {
   }
 
   /**
-   * CONFIRM PAYMENT - Cambia estado de pago a CONFIRMED
+   * CONFIRM PAYMENT - Cambia estado de pago a CONFIRMED o REJECTED
    *
-   * Actualiza totalPaid y recalcula estado de sale automáticamente.
-   * Si pago es rechazado (REJECTED), resta del totalPaid.
+   * Actualiza totalPaid y recalcula el estado financiero.
    */
   async confirmPayment(paymentId: number, status: PaymentStatus) {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -498,29 +575,42 @@ export class SalesService {
         throw new NotFoundException(`Pago ${paymentId} no encontrado`);
 
       const sale = payment.sale;
+      const saleWithTradeIns = await queryRunner.manager.findOne(Sale, {
+        where: { id: sale.id },
+        relations: ['tradeIns'],
+      });
       const wasConfirmed = payment.status === PaymentStatus.CONFIRMED;
+
+      if (!saleWithTradeIns) {
+        throw new NotFoundException(`Operación ${sale.id} no encontrada`);
+      }
+
+      if (saleWithTradeIns.status === SaleStatus.CANCELLED) {
+        throw new BadRequestException(
+          'No se puede modificar un pago de una operación cancelada',
+        );
+      }
 
       // Aplicar cambio de estado
       if (status === PaymentStatus.CONFIRMED) {
         payment.status = PaymentStatus.CONFIRMED;
         payment.paidAt = new Date();
-        sale.totalPaid += payment.amount;
+        saleWithTradeIns.totalPaid += Number(payment.amount);
       } else if (status === PaymentStatus.REJECTED) {
         payment.status = PaymentStatus.REJECTED;
         // Si fue confirmado antes, revertir el totalPaid
         if (wasConfirmed) {
-          sale.totalPaid -= payment.amount;
+          saleWithTradeIns.totalPaid -= Number(payment.amount);
         }
       }
 
-      // Recalcular estado de venta
-      sale.status = this.calculateStatusFromPayments(sale);
+      saleWithTradeIns.status = this.calculateSaleStatus(saleWithTradeIns);
 
       await queryRunner.manager.save(payment);
-      await queryRunner.manager.save(sale);
+      await queryRunner.manager.save(saleWithTradeIns);
 
       await queryRunner.commitTransaction();
-      return { payment, sale };
+      return { payment, sale: saleWithTradeIns };
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -530,10 +620,11 @@ export class SalesService {
   }
 
   /**
-   * DELIVER SALE - Marca como DELIVERED
+   * DELIVER SALE - Completa la operación a nivel operativo
    *
-   * Precondición: 100% pagado (totalPaid >= finalPrice)
-   * Actualiza stock del vehículo según tipo de operación
+   * Precondición: operación confirmada financieramente
+   * Actualiza stock del vehículo según tipo de operación y completa
+   * documentación y transferencia.
    */
   async deliverSale(id: number) {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -543,32 +634,35 @@ export class SalesService {
     try {
       const sale = await queryRunner.manager.findOne(Sale, {
         where: { id },
-        relations: ['vehicle', 'payments'],
+        relations: ['vehicle', 'payments', 'tradeIns'],
       });
 
       if (!sale) throw new NotFoundException(`Operación ${id} no encontrada`);
 
-      // Validar pago completo
-      const totalConfirmed = sale.payments
+      sale.totalPaid = sale.payments
         .filter((p) => p.status === PaymentStatus.CONFIRMED)
         .reduce((sum, p) => sum + Number(p.amount), 0);
+      sale.status = this.calculateSaleStatus(sale);
 
-      if (totalConfirmed < sale.finalPrice) {
-        throw new BadRequestException('No se puede entregar sin pago completo');
+      if (sale.status !== SaleStatus.CONFIRMED) {
+        throw new BadRequestException(
+          'No se puede completar la operación sin saldo cubierto',
+        );
       }
 
       // Actualizar vehículo según tipo de operación
       const vehicle = sale.vehicle;
 
       if (sale.type === SaleType.SALE) {
-        // SALE: Vehículo vendido, sale.status = SOLD en inventario
+        // SALE: Vehículo vendido, sale del inventario
         vehicle.status = VehicleStatus.SOLD;
       } else if (sale.type === SaleType.PURCHASE) {
         // PURCHASE: Vehículo nuevo en inventario, status = AVAILABLE
         vehicle.status = VehicleStatus.AVAILABLE;
       }
 
-      sale.status = SaleStatus.DELIVERED;
+      sale.documentationStatus = DocumentationStatus.COMPLETED;
+      sale.transferStatus = TransferStatus.COMPLETED;
 
       await queryRunner.manager.save(vehicle);
       await queryRunner.manager.save(sale);
@@ -584,75 +678,44 @@ export class SalesService {
   }
 
   /**
-   * CALCULATE SALE STATUS - Determina estado automáticamente
+   * CALCULATE SALE STATUS - Determina el estado financiero automáticamente
    *
    * Lógica:
-   * - DRAFT: Estado inicial (nunca cambiar manualmente desde aquí)
-   * - RESERVED: Primer pago confirmado O trade-in agregado
-   * - SOLD: 100% pagado (totalPaid >= finalPrice)
-   * - DELIVERED: Manual (solo desde SOLD con deliver())
+   * - DRAFT: Sin pagos confirmados ni trade-ins
+   * - PARTIALLY_PAID: Hay cobertura parcial
+   * - CONFIRMED: El total quedó cubierto
+   * - CANCELLED: Se preserva si fue seteado manualmente
    */
-  private calculateSaleStatus(sale: Sale, amountAdded: number): SaleStatus {
-    // Si ya está DELIVERED, no cambiar
-    if (sale.status === SaleStatus.DELIVERED) {
+  private calculateSaleStatus(sale: Sale): SaleStatus {
+    // Si ya está cancelada, no se recalcula automáticamente
+    if (sale.status === SaleStatus.CANCELLED) {
       return sale.status;
     }
 
-    // Si hay trade-in agregado, pasar a RESERVED
-    if (sale.tradeIns.length > 0) {
-      return SaleStatus.RESERVED;
+    const balance = this.saleBalanceCalculatorService.calculate({
+      finalPrice: Number(sale.finalPrice ?? 0),
+      tradeInValues: Array.isArray(sale.tradeIns)
+        ? sale.tradeIns.map((tradeIn) => Number(tradeIn.tradeInValue ?? 0))
+        : [],
+      paymentValues: [Number(sale.totalPaid ?? 0)],
+    });
+    const coveredAmount = balance.tradeInsTotal + balance.paymentsTotal;
+
+    if (coveredAmount <= 0) {
+      return SaleStatus.DRAFT;
     }
 
-    const newTotalPaid = sale.totalPaid + amountAdded;
-
-    // Si está pagado 100%, pasar a SOLD
-    if (newTotalPaid >= sale.finalPrice) {
-      return SaleStatus.SOLD;
+    if (balance.pendingBalance <= 0) {
+      return SaleStatus.CONFIRMED;
     }
 
-    // Si hay pagos, pasar a RESERVED
-    if (newTotalPaid > 0 && sale.status === SaleStatus.DRAFT) {
-      return SaleStatus.RESERVED;
-    }
-
-    return sale.status;
+    return SaleStatus.PARTIALLY_PAID;
   }
 
   /**
-   * CALCULATE STATUS FROM PAYMENTS - Recalcula estado basado en pagos existentes
-   */
-  private calculateStatusFromPayments(sale: Sale): SaleStatus {
-    if (sale.status === SaleStatus.DELIVERED) {
-      return sale.status;
-    }
-
-    const totalConfirmed = sale.payments
-      .filter((p) => p.status === PaymentStatus.CONFIRMED)
-      .reduce((sum, p) => sum + Number(p.amount), 0);
-
-    // 100% pagado
-    if (totalConfirmed >= sale.finalPrice) {
-      return SaleStatus.SOLD;
-    }
-
-    // Hay al menos un pago confirmado
-    if (totalConfirmed > 0) {
-      return SaleStatus.RESERVED;
-    }
-
-    // Sin pagos confirmados
-    if (sale.tradeIns.length > 0) {
-      return SaleStatus.RESERVED;
-    }
-
-    return SaleStatus.DRAFT;
-  }
-
-  /**
-   * RESERVE - Cambio de estado DRAFT → RESERVED
+   * RESERVE - Reserva operativa del vehículo principal
    *
-   * Actualiza Vehicle.status a RESERVED (solo para SALE)
-   * Impide que otros clientes compren el mismo vehículo
+   * No altera el estado financiero de la venta.
    */
   async reserve(id: number) {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -667,9 +730,9 @@ export class SalesService {
 
       if (!sale) throw new NotFoundException(`Operación ${id} no encontrada`);
 
-      if (sale.status !== SaleStatus.DRAFT) {
+      if (sale.status === SaleStatus.CANCELLED) {
         throw new BadRequestException(
-          `No se puede reservar desde estado ${sale.status}`,
+          'No se puede reservar una operación cancelada',
         );
       }
 
@@ -679,7 +742,6 @@ export class SalesService {
         await queryRunner.manager.save(sale.vehicle);
       }
 
-      sale.status = SaleStatus.RESERVED;
       const updated = await queryRunner.manager.save(sale);
 
       await queryRunner.commitTransaction();
@@ -690,5 +752,12 @@ export class SalesService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  private getTradeInsTotal(tradeIns: TradeIn[] = []): number {
+    return tradeIns.reduce(
+      (total, tradeIn) => total + Number(tradeIn.tradeInValue ?? 0),
+      0,
+    );
   }
 }

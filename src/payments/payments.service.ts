@@ -8,7 +8,7 @@ import { Repository, DataSource, QueryRunner } from 'typeorm';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Sale, SaleStatus } from '../sales/entities/sale.entity';
-import { SalesService } from 'src/sales/sales.service';
+import { SaleBalanceCalculatorService } from 'src/sales/sale-balance-calculator.service';
 
 /**
  * PAYMENTS SERVICE - Gestión de pagos
@@ -24,7 +24,7 @@ export class PaymentsService {
     @InjectRepository(Sale)
     private readonly saleRepository: Repository<Sale>,
     private readonly dataSource: DataSource,
-    private readonly saleService: SalesService,
+    private readonly saleBalanceCalculatorService: SaleBalanceCalculatorService,
   ) {}
 
   /**
@@ -32,7 +32,7 @@ export class PaymentsService {
    *
    * Validaciones:
    * - La venta debe existir
-   * - La venta no debe estar cerrada (status SOLD o DELIVERED)
+   * - La venta no debe estar cancelada ni confirmada
    * - El monto debe ser positivo
    *
    * El pago se crea con status PENDING.
@@ -41,28 +41,39 @@ export class PaymentsService {
     const { saleId, amount, method, notes, currency } = createPaymentDto;
 
     // Validar que la venta existe
-    const sale = await this.saleRepository.findOne({ where: { id: saleId } });
+    const sale = await this.saleRepository.findOne({
+      where: { id: saleId },
+      relations: ['tradeIns'],
+    });
     if (!sale) {
       throw new NotFoundException(`Venta ${saleId} no encontrada`);
     }
 
     // Validar que la venta no esté cerrada
     if (
-      sale.status === SaleStatus.SOLD ||
-      sale.status === SaleStatus.DELIVERED
+      sale.status === SaleStatus.CONFIRMED ||
+      sale.status === SaleStatus.CANCELLED
     ) {
       throw new BadRequestException(
         'No se pueden agregar pagos a una venta cerrada',
       );
     }
-    //Si la venta esta en DRAFT, se cambia a RESERVED al agregar un pago
-    if (sale.status === SaleStatus.DRAFT) {
-      await this.saleService.reserve(sale.id);
-    }
 
     // Validar monto positivo
     if (amount <= 0) {
       throw new BadRequestException('El monto del pago debe ser mayor a 0');
+    }
+
+    const tradeInsTotal = sale.tradeIns.reduce(
+      (total, tradeIn) => total + Number(tradeIn.tradeInValue ?? 0),
+      0,
+    );
+
+    if (
+      Number(sale.totalPaid) + tradeInsTotal + amount >
+      Number(sale.finalPrice)
+    ) {
+      throw new BadRequestException('El monto del pago excede el saldo pendiente');
     }
 
     // Crear el pago
@@ -239,7 +250,7 @@ export class PaymentsService {
    * RECALCULAR TOTAL PAGADO DE VENTA - Método auxiliar
    *
    * Suma todos los pagos CONFIRMED de la venta y actualiza el totalPaid.
-   * También recalcula el estado de la venta basado en el progreso del pago.
+   * También recalcula el estado financiero de la venta.
    */
   private async recalculateSaleTotalPaid(
     sale: Sale,
@@ -256,16 +267,34 @@ export class PaymentsService {
       0,
     );
 
-    // Recalcular estado de la venta
-    if (sale.totalPaid >= sale.finalPrice) {
-      if (
-        sale.status === SaleStatus.DRAFT ||
-        sale.status === SaleStatus.RESERVED
-      ) {
-        sale.status = SaleStatus.SOLD;
-      }
-    } else if (sale.totalPaid > 0 && sale.status === SaleStatus.DRAFT) {
-      sale.status = SaleStatus.RESERVED;
+    if (sale.status === SaleStatus.CANCELLED) {
+      return;
     }
+
+    const saleWithTradeIns = await queryRunner.manager.findOne(Sale, {
+      where: { id: sale.id },
+      relations: ['tradeIns'],
+    });
+
+    const tradeInValues = saleWithTradeIns?.tradeIns?.map((tradeIn) =>
+      Number(tradeIn.tradeInValue ?? 0),
+    ) ?? [];
+
+    const balance = this.saleBalanceCalculatorService.calculate({
+      finalPrice: Number(sale.finalPrice ?? 0),
+      tradeInValues,
+      paymentValues: [Number(sale.totalPaid ?? 0)],
+    });
+    const coveredAmount = balance.tradeInsTotal + balance.paymentsTotal;
+
+    if (coveredAmount <= 0) {
+      sale.status = SaleStatus.DRAFT;
+      return;
+    }
+
+    sale.status =
+      balance.pendingBalance <= 0
+        ? SaleStatus.CONFIRMED
+        : SaleStatus.PARTIALLY_PAID;
   }
 }

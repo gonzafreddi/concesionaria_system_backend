@@ -24,12 +24,17 @@ import { Expose } from 'class-transformer';
  * - SALE: Cliente compra vehículo (stock disminuye)
  * - PURCHASE: Concesionaria compra vehículo (stock aumenta)
  *
- * Estado: Transiciones validadas en SaleService
- * - DRAFT: Operación inicial sin confirmar
- * - RESERVED: Cliente reserva, vehículo marcado como RESERVED
- * - SOLD/DELIVERED: Completada, vehículo pasado a SOLD
+ * Estado financiero: Transiciones validadas en SaleService
+ * - DRAFT: Operación creada sin cobertura
+ * - PARTIALLY_PAID: Tiene pagos confirmados o trade-ins, pero no cubre el total
+ * - CONFIRMED: La cuenta quedó saldada
+ * - CANCELLED: Operación anulada
  *
- * Precio: basePrice es inicial, finalPrice se calcula con tradein y pagos
+ * Estados operativos:
+ * - documentationStatus: seguimiento de documentación
+ * - transferStatus: seguimiento de transferencia
+ *
+ * Precio: basePrice es inicial y finalPrice es el total de referencia de la operación
  */
 
 export enum SaleType {
@@ -39,9 +44,21 @@ export enum SaleType {
 
 export enum SaleStatus {
   DRAFT = 'DRAFT',
-  RESERVED = 'RESERVED',
-  SOLD = 'SOLD',
-  DELIVERED = 'DELIVERED',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
+  CONFIRMED = 'CONFIRMED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum DocumentationStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+}
+
+export enum TransferStatus {
+  NOT_STARTED = 'NOT_STARTED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
 }
 
 @Entity('sales')
@@ -56,6 +73,24 @@ export class Sale {
   // Estado de la operación
   @Column({ type: 'enum', enum: SaleStatus, default: SaleStatus.DRAFT })
   status: SaleStatus;
+
+  // Estado documental de la operación
+  @Column({
+    name: 'documentation_status',
+    type: 'enum',
+    enum: DocumentationStatus,
+    default: DocumentationStatus.PENDING,
+  })
+  documentationStatus: DocumentationStatus;
+
+  // Estado de la transferencia administrativa/registral
+  @Column({
+    name: 'transfer_status',
+    type: 'enum',
+    enum: TransferStatus,
+    default: TransferStatus.NOT_STARTED,
+  })
+  transferStatus: TransferStatus;
 
   @ManyToOne(() => Quote, { nullable: true })
   quote: Quote | null;
@@ -143,6 +178,12 @@ export class Sale {
   get pendingBalance(): number {
     const final = Number(this.finalPrice ?? 0);
     const paid = Number(this.totalPaid ?? 0);
-    return Math.max(final - paid, 0);
+    const tradeInsTotal = Array.isArray(this.tradeIns)
+      ? this.tradeIns.reduce(
+          (total, tradeIn) => total + Number(tradeIn.tradeInValue ?? 0),
+          0,
+        )
+      : 0;
+    return Math.max(final - paid - tradeInsTotal, 0);
   }
 }

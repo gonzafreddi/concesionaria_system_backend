@@ -12,6 +12,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { UpdateSaleDto } from './dto/update-sale.dto';
+import { UpdateSaleWorkflowStatusDto } from './dto/update-sale-workflow-status.dto';
 
 @ApiTags('sales')
 @Controller('sales')
@@ -31,6 +32,20 @@ export class SalesController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.salesService.findOne(id);
+  }
+
+  @Get(':id/pending-balance')
+  getPendingBalance(@Param('id', ParseIntPipe) id: number) {
+    // Endpoint dedicado para consultar el saldo pendiente de una venta
+    return this.salesService.getPendingBalance(id);
+  }
+
+  @Patch(':id/workflow-status')
+  updateWorkflowStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateSaleWorkflowStatusDto: UpdateSaleWorkflowStatusDto,
+  ) {
+    return this.salesService.updateWorkflowStatus(id, updateSaleWorkflowStatusDto);
   }
 
   @Patch(':id')

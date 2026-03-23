@@ -10,6 +10,8 @@ import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { User } from '../users/entities/user.entity';
 import { Payment } from '../payments/entities/payment.entity';
 import { VehiclesModule } from 'src/vehicles/vehicles.module';
+import { SaleAccountBalanceService } from './sale-account-balance.service';
+import { SaleBalanceCalculatorService } from './sale-balance-calculator.service';
 
 @Module({
   imports: [
@@ -25,7 +27,13 @@ import { VehiclesModule } from 'src/vehicles/vehicles.module';
     VehiclesModule,
   ],
   controllers: [SalesController],
-  providers: [SalesService],
-  exports: [SalesService],
+  providers: [
+    SalesService,
+    // Orquesta la lectura de la venta y compone la respuesta del balance
+    SaleAccountBalanceService,
+    // Encapsula la fórmula del saldo pendiente
+    SaleBalanceCalculatorService,
+  ],
+  exports: [SalesService, SaleBalanceCalculatorService],
 })
 export class SalesModule {}

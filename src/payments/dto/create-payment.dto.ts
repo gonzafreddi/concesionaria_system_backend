@@ -19,9 +19,9 @@ import { Transform } from 'class-transformer';
  * - method: Forma de pago
  * - notes: Información adicional (referencia, cheque, etc)
  *
- * Validaciones en SalesService:
- * - Sale no debe estar cerrada (status !== DELIVERED)
- * - Sale.finalPrice >= Sale.totalPaid + amount (no sobre-pagar)
+ * Validaciones de negocio:
+ * - Sale no debe estar confirmada ni cancelada
+ * - Sale.finalPrice >= Sale.totalPaid + tradeIns + amount (no sobre-pagar)
  */
 
 export class CreatePaymentDto {

@@ -12,10 +12,10 @@ import { Quote } from '../../quotes/entities/quote.entity';
 import { Sale } from '../../sales/entities/sale.entity';
 import { VehicleAcquisitionTypes } from './vehicle_acquisition_types';
 import { Inspection } from '../../inspections/entities/inspection.entity';
-import { PreSaleAesthetic } from 'src/pre-sale/entities/pre_sale_aesthetic.entity';
-import { PreSaleDocumentation } from 'src/pre-sale/entities/pre_sale_documentation.entity';
-import { PreSaleBodywork } from 'src/pre-sale/entities/pre_sale_bodywork.entity';
-import { PreSaleMechanical } from 'src/pre-sale/entities/pre_sale_mechanical.entity';
+import { PreSaleAesthetic } from '../../pre-sale/entities/pre_sale_aesthetic.entity';
+import { PreSaleDocumentation } from '../../pre-sale/entities/pre_sale_documentation.entity';
+import { PreSaleBodywork } from '../../pre-sale/entities/pre_sale_bodywork.entity';
+import { PreSaleMechanical } from '../../pre-sale/entities/pre_sale_mechanical.entity';
 export enum VehicleType {
   NEW = 'NEW',
   USED = 'USED',

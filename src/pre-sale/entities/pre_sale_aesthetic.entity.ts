@@ -5,7 +5,7 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm';
-import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
+import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 import { PreSaleStatus } from './pre-sale-status.enum';
 @Entity()
 export class PreSaleAesthetic {

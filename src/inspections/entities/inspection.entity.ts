@@ -5,8 +5,8 @@ import {
   PrimaryGeneratedColumn,
   Entity,
 } from 'typeorm';
-import { Client } from 'src/clients/entities/client.entity';
-import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
+import { Client } from '../../clients/entities/client.entity';
+import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 @Entity('inspections')
 export class Inspection {
   // ID del peritaje

@@ -14,6 +14,7 @@ import 'dotenv/config';
 import { InspectionsModule } from './inspections/inspections.module';
 import { AuthModule } from './auth/auth.module';
 import { PreSaleModule } from './pre-sale/pre-sale.module';
+import { DocumentsModule } from './documents/documents.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -37,6 +38,7 @@ import { PreSaleModule } from './pre-sale/pre-sale.module';
     InspectionsModule,
     AuthModule,
     PreSaleModule,
+    DocumentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

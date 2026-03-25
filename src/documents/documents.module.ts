@@ -7,9 +7,19 @@ import { Sale } from '../sales/entities/sale.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { Payment } from '../payments/entities/payment.entity';
 import { Client } from '../clients/entities/client.entity';
+import { Purchase } from '../purchase/entities/purchase.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Document, Sale, Vehicle, Payment, Client])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Document,
+      Sale,
+      Purchase,
+      Vehicle,
+      Payment,
+      Client,
+    ]),
+  ],
   controllers: [DocumentsController],
   providers: [DocumentsService],
 })

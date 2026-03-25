@@ -8,6 +8,7 @@ import { Sale } from '../sales/entities/sale.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { Payment } from '../payments/entities/payment.entity';
 import { Client } from '../clients/entities/client.entity';
+import { Purchase } from '../purchase/entities/purchase.entity';
 
 @Injectable()
 export class DocumentsService {
@@ -16,6 +17,8 @@ export class DocumentsService {
     private readonly documentsRepository: Repository<Document>,
     @InjectRepository(Sale)
     private readonly salesRepository: Repository<Sale>,
+    @InjectRepository(Purchase)
+    private readonly purchasesRepository: Repository<Purchase>,
     @InjectRepository(Vehicle)
     private readonly vehiclesRepository: Repository<Vehicle>,
     @InjectRepository(Payment)
@@ -34,6 +37,7 @@ export class DocumentsService {
       type: createDocumentDto.type,
       status: createDocumentDto.status ?? DocumentStatus.DRAFT,
       title: createDocumentDto.title,
+      purchaseId: createDocumentDto.purchaseId ?? null,
       saleId: createDocumentDto.saleId ?? null,
       vehicleId: createDocumentDto.vehicleId ?? null,
       paymentId: createDocumentDto.paymentId ?? null,
@@ -82,6 +86,10 @@ export class DocumentsService {
 
     Object.assign(document, {
       ...updateDocumentDto,
+      purchaseId:
+        updateDocumentDto.purchaseId === undefined
+          ? document.purchaseId
+          : updateDocumentDto.purchaseId,
       saleId:
         updateDocumentDto.saleId === undefined
           ? document.saleId
@@ -139,6 +147,20 @@ export class DocumentsService {
       if (!sale) {
         throw new NotFoundException(
           `Venta ${documentDto.saleId} no encontrada`,
+        );
+      }
+    }
+
+    if (
+      documentDto.purchaseId !== undefined &&
+      documentDto.purchaseId !== null
+    ) {
+      const purchase = await this.purchasesRepository.findOne({
+        where: { id: documentDto.purchaseId },
+      });
+      if (!purchase) {
+        throw new NotFoundException(
+          `Compra ${documentDto.purchaseId} no encontrada`,
         );
       }
     }

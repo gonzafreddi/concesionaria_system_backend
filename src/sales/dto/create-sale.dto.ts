@@ -3,13 +3,11 @@ import {
   IsNumber,
   IsInt,
   IsOptional,
-  IsEnum,
   IsDateString,
   IsPositive,
   Min,
   Max,
 } from 'class-validator';
-import { SaleType } from '../entities/sale.entity';
 import { Type } from 'class-transformer';
 
 export class CreateSaleDto {
@@ -46,14 +44,6 @@ export class CreateSaleDto {
   @Type(() => Number)
   @IsInt()
   userId: number;
-
-  @ApiProperty({
-    enum: SaleType,
-    default: SaleType.SALE,
-    description: 'Tipo de operación: SALE (venta) o PURCHASE (compra)',
-  })
-  @IsEnum(SaleType)
-  type: SaleType = SaleType.SALE;
 
   @ApiProperty({
     description: 'Precio inicial del vehículo sin aplicar descuentos',

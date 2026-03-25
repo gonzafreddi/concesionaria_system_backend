@@ -18,7 +18,7 @@ import {
 /**
  * DTO para crear un documento.
  *
- * Los vínculos con venta, vehículo, pago y cliente son opcionales para poder
+ * Los vínculos con compra, venta, vehículo, pago y cliente son opcionales para poder
  * reutilizar el módulo con distintos flujos del negocio.
  */
 export class CreateDocumentDto {
@@ -48,6 +48,20 @@ export class CreateDocumentDto {
   @IsString()
   @MaxLength(255)
   title: string;
+
+  @ApiPropertyOptional({
+    description: 'ID de la compra asociada',
+    nullable: true,
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === null || value === undefined || value === ''
+      ? null
+      : Number(value),
+  )
+  @IsInt()
+  @Min(1)
+  purchaseId?: number | null;
 
   @ApiPropertyOptional({
     description: 'ID de la venta asociada',

@@ -17,11 +17,7 @@ import { TradeIn } from './trade-in.entity';
 /**
  * Sale Entity
  *
- * Soporta tanto operaciones de venta como compra (SALE/PURCHASE).
- *
- * Flujo unificado:
- * - SALE: Cliente compra vehículo (stock disminuye)
- * - PURCHASE: Concesionaria compra vehículo (stock aumenta)
+ * Representa una operación de venta de un vehículo.
  *
  * Estado financiero: Transiciones validadas en SaleService
  * - DRAFT: Operación creada sin cobertura
@@ -38,7 +34,6 @@ import { TradeIn } from './trade-in.entity';
 
 export enum SaleType {
   SALE = 'SALE',
-  PURCHASE = 'PURCHASE',
 }
 
 export enum SaleStatus {
@@ -66,7 +61,7 @@ export class Sale {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // Tipo de operación: SALE (venta) o PURCHASE (compra)
+  // Tipo de operación. Se mantiene para compatibilidad y siempre es SALE.
   @Column({ type: 'enum', enum: SaleType, default: SaleType.SALE })
   type: SaleType;
 

@@ -30,17 +30,12 @@ import { SaleBalanceCalculatorService } from './sale-balance-calculator.service'
 /**
  * SALES SERVICE - Lógica centralizada
  *
- * Flujo unificado para SALE y PURCHASE usando una única entidad.
+ * Flujo de ventas.
  *
- * SALE (Venta):
+ * SALE:
  *   - Cliente compra vehículo
  *   - Stock disminuye
  *   - Vehicle.status: AVAILABLE → RESERVED → SOLD
- *
- * PURCHASE (Compra):
- *   - Concesionaria compra vehículo a cliente
- *   - Stock aumenta (nuevo vehículo en inventario)
- *   - Vehicle.status: no aplica (es vehículo de entrada)
  *
  * TRANSICIONES DE ESTADO FINANCIERO (validadas automáticamente):
  *   DRAFT → PARTIALLY_PAID: Hay pagos confirmados o trade-ins, pero resta saldo
@@ -78,7 +73,7 @@ export class SalesService {
   ) {}
 
   /**
-   * CREATE - Crea nueva operación (SALE o PURCHASE)
+   * CREATE - Crea nueva operación de venta
    *
    * Inicia en DRAFT.
    * finalPrice representa el total de la operación y los trade-ins se descuentan
@@ -91,7 +86,6 @@ export class SalesService {
       vehicleId,
       userId,
       saleDate,
-      type,
       tradeIns,
       transferPercentage,
       adminExpenses,
@@ -219,7 +213,7 @@ export class SalesService {
         client,
         vehicle,
         user,
-        type: type || SaleType.SALE,
+        type: SaleType.SALE,
         status: SaleStatus.DRAFT,
         documentationStatus: DocumentationStatus.PENDING,
         basePrice,
@@ -253,10 +247,8 @@ export class SalesService {
       }
 
       // 🚗 Reservar vehículo principal
-      if (sale.type === SaleType.SALE) {
-        vehicle.status = VehicleStatus.RESERVED;
-        await manager.save(vehicle);
-      }
+      vehicle.status = VehicleStatus.RESERVED;
+      await manager.save(vehicle);
 
       return sale;
     });
@@ -346,10 +338,7 @@ export class SalesService {
 
       sale.status = SaleStatus.CANCELLED;
 
-      if (
-        sale.type === SaleType.SALE &&
-        sale.vehicle?.status === VehicleStatus.RESERVED
-      ) {
+      if (sale.vehicle?.status === VehicleStatus.RESERVED) {
         sale.vehicle.status = VehicleStatus.AVAILABLE;
         await this.vehicleRepository.save(sale.vehicle);
       }
@@ -639,8 +628,7 @@ export class SalesService {
    * DELIVER SALE - Completa la operación a nivel operativo
    *
    * Precondición: operación confirmada financieramente
-   * Actualiza stock del vehículo según tipo de operación y completa
-   * documentación y transferencia.
+   * Actualiza stock del vehículo vendido y completa documentación y transferencia.
    */
   async deliverSale(id: number) {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -666,16 +654,8 @@ export class SalesService {
         );
       }
 
-      // Actualizar vehículo según tipo de operación
       const vehicle = sale.vehicle;
-
-      if (sale.type === SaleType.SALE) {
-        // SALE: Vehículo vendido, sale del inventario
-        vehicle.status = VehicleStatus.SOLD;
-      } else if (sale.type === SaleType.PURCHASE) {
-        // PURCHASE: Vehículo nuevo en inventario, status = AVAILABLE
-        vehicle.status = VehicleStatus.AVAILABLE;
-      }
+      vehicle.status = VehicleStatus.SOLD;
 
       sale.documentationStatus = DocumentationStatus.COMPLETED;
       sale.transferStatus = TransferStatus.COMPLETED;
@@ -752,11 +732,8 @@ export class SalesService {
         );
       }
 
-      // Solo reservar vehículos en SALE
-      if (sale.type === SaleType.SALE) {
-        sale.vehicle.status = VehicleStatus.RESERVED;
-        await queryRunner.manager.save(sale.vehicle);
-      }
+      sale.vehicle.status = VehicleStatus.RESERVED;
+      await queryRunner.manager.save(sale.vehicle);
 
       const updated = await queryRunner.manager.save(sale);
 

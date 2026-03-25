@@ -5,9 +5,12 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Purchase } from '../../purchase/entities/purchase.entity';
 
 /**
  * Tipos de documentos que maneja el sistema.
@@ -36,7 +39,7 @@ export enum DocumentStatus {
  * Document Entity
  *
  * Representa un documento generado por el sistema y su vínculo opcional con
- * una venta, vehículo, pago o cliente.
+ * una compra, venta, vehículo, pago o cliente.
  */
 @Entity('documents')
 export class Document {
@@ -68,6 +71,14 @@ export class Document {
   @ApiProperty({ description: 'Título o nombre visible del documento' })
   @Column({ type: 'varchar', length: 255 })
   title: string;
+
+  @ApiPropertyOptional({
+    description: 'ID de la compra asociada, si corresponde',
+    nullable: true,
+  })
+  @Index()
+  @Column({ name: 'purchase_id', type: 'int', nullable: true })
+  purchaseId: number | null;
 
   @ApiPropertyOptional({
     description: 'ID de la venta asociada, si corresponde',
@@ -145,4 +156,11 @@ export class Document {
   @ApiProperty({ description: 'Fecha de última actualización del registro' })
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @ManyToOne(() => Purchase, (purchase) => purchase.documents, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'purchase_id' })
+  purchase: Purchase | null;
 }

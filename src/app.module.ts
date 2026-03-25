@@ -15,6 +15,7 @@ import { InspectionsModule } from './inspections/inspections.module';
 import { AuthModule } from './auth/auth.module';
 import { PreSaleModule } from './pre-sale/pre-sale.module';
 import { DocumentsModule } from './documents/documents.module';
+import { PurchaseModule } from './purchase/purchase.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -24,7 +25,7 @@ import { DocumentsModule } from './documents/documents.module';
       username: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASS || 'postgres',
       database: process.env.DB_NAME || 'concesionaria',
-      synchronize: false,
+      synchronize: true,
       autoLoadEntities: true,
     }),
     VehicleRequestModule,
@@ -39,6 +40,7 @@ import { DocumentsModule } from './documents/documents.module';
     AuthModule,
     PreSaleModule,
     DocumentsModule,
+    PurchaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],

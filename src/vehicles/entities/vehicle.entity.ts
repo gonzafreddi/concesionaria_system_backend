@@ -16,6 +16,7 @@ import { PreSaleAesthetic } from '../../pre-sale/entities/pre_sale_aesthetic.ent
 import { PreSaleDocumentation } from '../../pre-sale/entities/pre_sale_documentation.entity';
 import { PreSaleBodywork } from '../../pre-sale/entities/pre_sale_bodywork.entity';
 import { PreSaleMechanical } from '../../pre-sale/entities/pre_sale_mechanical.entity';
+import { Purchase } from '../../purchase/entities/purchase.entity';
 export enum VehicleType {
   NEW = 'NEW',
   USED = 'USED',
@@ -117,4 +118,7 @@ export class Vehicle {
     (preSaleMechanical) => preSaleMechanical.vehicle,
   )
   preSaleMechanical: PreSaleMechanical;
+
+  @OneToMany(() => Purchase, (purchase) => purchase.vehicle)
+  purchases: Purchase[];
 }

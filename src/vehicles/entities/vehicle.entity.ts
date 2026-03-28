@@ -23,6 +23,7 @@ export enum VehicleType {
 }
 
 export enum VehicleStatus {
+  PENDING_INSPECTION = 'PENDING_INSPECTION',
   AVAILABLE = 'AVAILABLE',
   RESERVED = 'RESERVED',
   SOLD = 'SOLD',
@@ -74,7 +75,7 @@ export class Vehicle {
   @Column({
     type: 'enum',
     enum: VehicleStatus,
-    default: VehicleStatus.INSPECTION,
+    default: VehicleStatus.PENDING_INSPECTION,
   })
   status: VehicleStatus;
 

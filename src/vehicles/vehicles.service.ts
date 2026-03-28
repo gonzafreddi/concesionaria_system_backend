@@ -14,7 +14,11 @@ export class VehiclesService {
   ) {}
 
   create(createVehicleDto: CreateVehicleDto) {
-    const vehicle = this.vehiclesRepository.create(createVehicleDto as any);
+    const vehicle = this.vehiclesRepository.create({
+      ...createVehicleDto,
+      status:
+        createVehicleDto.status ?? VehicleStatus.PENDING_INSPECTION,
+    } as any);
     return this.vehiclesRepository.save(vehicle);
   }
 
@@ -54,6 +58,14 @@ export class VehiclesService {
     });
 
     return vehicles;
+  }
+
+  async getPendingInspectionVehicles() {
+    return this.vehiclesRepository.find({
+      where: {
+        status: VehicleStatus.PENDING_INSPECTION,
+      },
+    });
   }
 
   async checkPreSaleCompletion(vehicleId: number) {

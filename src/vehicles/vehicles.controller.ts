@@ -34,6 +34,12 @@ export class VehiclesController {
     return this.vehiclesService.getVehicleForSale();
   }
 
+  @ApiOperation({ summary: 'Get vehicles pending inspection' })
+  @Get('pending-inspection')
+  getPendingInspectionVehicles() {
+    return this.vehiclesService.getPendingInspectionVehicles();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.vehiclesService.findOne(id);

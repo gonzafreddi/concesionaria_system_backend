@@ -52,8 +52,8 @@ export class CreatePaymentDto {
   @IsEnum(Currency)
   currency: Currency;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, enum: PaymentStatus })
   @IsOptional()
-  @IsString()
+  @IsEnum(PaymentStatus)
   status?: PaymentStatus;
 }

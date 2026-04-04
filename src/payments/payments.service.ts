@@ -8,7 +8,7 @@ import { Repository, DataSource, QueryRunner } from 'typeorm';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Sale, SaleStatus } from '../sales/entities/sale.entity';
-import { SaleBalanceCalculatorService } from 'src/sales/sale-balance-calculator.service';
+import { SaleBalanceCalculatorService } from '../sales/sale-balance-calculator.service';
 
 /**
  * PAYMENTS SERVICE - Gestión de pagos
@@ -35,61 +35,95 @@ export class PaymentsService {
    * - La venta no debe estar cancelada ni confirmada
    * - El monto debe ser positivo
    *
-   * El pago se crea con status PENDING.
+   * El pago respeta el status recibido; si no se envía, inicia PENDING.
    */
   async createPayment(createPaymentDto: CreatePaymentDto): Promise<Payment> {
     const { saleId, amount, method, notes, currency, status } =
       createPaymentDto;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Validar que la venta existe
-    const sale = await this.saleRepository.findOne({
-      where: { id: saleId },
-      relations: ['tradeIns'],
-    });
-    if (!sale) {
-      throw new NotFoundException(`Venta ${saleId} no encontrada`);
+    try {
+      const sale = await queryRunner.manager.findOne(Sale, {
+        where: { id: saleId },
+        relations: ['tradeIns', 'payments'],
+      });
+      if (!sale) {
+        throw new NotFoundException(`Venta ${saleId} no encontrada`);
+      }
+
+      if (
+        sale.status === SaleStatus.CONFIRMED ||
+        sale.status === SaleStatus.CANCELLED
+      ) {
+        throw new BadRequestException(
+          'No se pueden agregar pagos a una venta cerrada',
+        );
+      }
+
+      if (amount <= 0) {
+        throw new BadRequestException('El monto del pago debe ser mayor a 0');
+      }
+
+      const resolvedStatus = status ?? PaymentStatus.PENDING;
+      const balance = this.saleBalanceCalculatorService.calculate({
+        finalPrice: Number(sale.finalPrice ?? 0),
+        tradeInValues: Array.isArray(sale.tradeIns)
+          ? sale.tradeIns.map((tradeIn) => Number(tradeIn.tradeInValue ?? 0))
+          : [],
+        paymentValues: Array.isArray(sale.payments)
+          ? sale.payments
+              .filter((payment) => payment.status === PaymentStatus.CONFIRMED)
+              .map((payment) => Number(payment.amount ?? 0))
+          : [],
+      });
+
+      if (balance.pendingBalance <= 0) {
+        sale.status = SaleStatus.CONFIRMED;
+        await queryRunner.manager.save(sale);
+        throw new BadRequestException(
+          'La venta ya no tiene saldo pendiente',
+        );
+      }
+
+      const nextCoveredAmount =
+        balance.tradeInsTotal +
+        balance.paymentsTotal +
+        (resolvedStatus === PaymentStatus.CONFIRMED ? Number(amount) : 0);
+
+      if (nextCoveredAmount > Number(sale.finalPrice)) {
+        throw new BadRequestException(
+          'El monto del pago excede el saldo pendiente',
+        );
+      }
+
+      const payment = queryRunner.manager.create(Payment, {
+        sale,
+        amount,
+        method,
+        notes: notes || null,
+        status: resolvedStatus,
+        currency,
+        paidAt:
+          resolvedStatus === PaymentStatus.CONFIRMED ? new Date() : null,
+      });
+
+      await queryRunner.manager.save(payment);
+
+      if (resolvedStatus === PaymentStatus.CONFIRMED) {
+        await this.recalculateSaleTotalPaid(sale, queryRunner);
+        await queryRunner.manager.save(sale);
+      }
+
+      await queryRunner.commitTransaction();
+      return this.getPaymentById(payment.id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    // Validar que la venta no esté cerrada
-    if (
-      sale.status === SaleStatus.CONFIRMED ||
-      sale.status === SaleStatus.CANCELLED
-    ) {
-      throw new BadRequestException(
-        'No se pueden agregar pagos a una venta cerrada',
-      );
-    }
-
-    // Validar monto positivo
-    if (amount <= 0) {
-      throw new BadRequestException('El monto del pago debe ser mayor a 0');
-    }
-
-    const tradeInsTotal = sale.tradeIns.reduce(
-      (total, tradeIn) => total + Number(tradeIn.tradeInValue ?? 0),
-      0,
-    );
-
-    if (
-      Number(sale.totalPaid) + tradeInsTotal + amount >
-      Number(sale.finalPrice)
-    ) {
-      throw new BadRequestException(
-        'El monto del pago excede el saldo pendiente',
-      );
-    }
-
-    // Crear el pago
-    const payment = this.paymentRepository.create({
-      sale,
-      amount,
-      method,
-      notes: notes || null,
-      status: status || PaymentStatus.PENDING,
-      currency: currency,
-    });
-
-    return await this.paymentRepository.save(payment);
   }
 
   /**

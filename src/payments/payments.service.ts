@@ -82,7 +82,7 @@ export class PaymentsService {
       amount,
       method,
       notes: notes || null,
-      status: PaymentStatus.PENDING,
+      status: status || PaymentStatus.PENDING,
       currency: currency,
     });
 

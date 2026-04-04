@@ -1,17 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { Vehicle } from './entities/vehicle.entity';
 import { VehicleStatus } from './entities/vehicle.entity';
-import { PreSaleStatus } from 'src/pre-sale/entities/pre-sale-status.enum';
+import { PreSaleStatus } from '../pre-sale/entities/pre-sale-status.enum';
+import { VehicleSaleOptionDto } from './dto/vehicle-sale-option.dto';
 @Injectable()
 export class VehiclesService {
   constructor(
     @InjectRepository(Vehicle)
     private vehiclesRepository: Repository<Vehicle>,
   ) {}
+
+  private static readonly SALE_ELIGIBLE_STATUSES = [VehicleStatus.AVAILABLE];
 
   create(createVehicleDto: CreateVehicleDto) {
     const vehicle = this.vehiclesRepository.create({
@@ -50,14 +53,24 @@ export class VehiclesService {
     return this.vehiclesRepository.save(vehicle);
   }
 
-  async getVehicleForSale() {
+  async getVehicleForSale(): Promise<VehicleSaleOptionDto[]> {
     const vehicles = await this.vehiclesRepository.find({
       where: {
-        status: VehicleStatus.AVAILABLE,
+        status: In(VehiclesService.SALE_ELIGIBLE_STATUSES),
       },
     });
 
-    return vehicles;
+    return vehicles.map((vehicle) => ({
+      id: vehicle.id,
+      type: vehicle.type,
+      brand: vehicle.brand,
+      model: vehicle.model,
+      year: vehicle.year,
+      color: vehicle.color,
+      vehiclePlate: vehicle.vehiclePlate,
+      price: Number(vehicle.price),
+      status: vehicle.status,
+    }));
   }
 
   async getPendingInspectionVehicles() {

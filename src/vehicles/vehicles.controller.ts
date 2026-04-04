@@ -8,11 +8,11 @@ import {
   Delete,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { get } from 'http';
+import { VehicleSaleOptionDto } from './dto/vehicle-sale-option.dto';
 
 @ApiTags('vehicles')
 @Controller('vehicles')
@@ -28,9 +28,17 @@ export class VehiclesController {
   findAll() {
     return this.vehiclesService.findAll();
   }
-  @ApiOperation({ summary: 'Get available vehicles for sale' })
-  @Get('available')
-  getAvailableVehicles() {
+  @ApiOperation({
+    summary: 'Listar vehículos habilitados para ser ofrecidos en una venta',
+  })
+  @ApiOkResponse({
+    description:
+      'Retorna exclusivamente los vehículos elegibles para venta según la regla de negocio vigente',
+    type: VehicleSaleOptionDto,
+    isArray: true,
+  })
+  @Get('available-for-sale')
+  getAvailableForSaleVehicles() {
     return this.vehiclesService.getVehicleForSale();
   }
 

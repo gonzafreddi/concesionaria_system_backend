@@ -23,7 +23,7 @@ import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
 import { User } from '../users/entities/user.entity';
 import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
-import { VehiclesService } from 'src/vehicles/vehicles.service';
+import { VehiclesService } from '../vehicles/vehicles.service';
 import { SaleAccountBalanceService } from './sale-account-balance.service';
 import { SaleBalanceCalculatorService } from './sale-balance-calculator.service';
 
@@ -242,7 +242,11 @@ export class SalesService {
         sale.status = this.calculateSaleStatus(sale);
         await manager.save(sale);
 
-        tradeInVehicle.status = VehicleStatus.INSPECTION;
+        // Respetar el estado previo del vehículo recibido como parte de pago.
+        // Solo se asigna INSPECTION si no tiene un estado definido.
+        if (!tradeInVehicle.status) {
+          tradeInVehicle.status = VehicleStatus.INSPECTION;
+        }
         await manager.save(tradeInVehicle);
       }
 

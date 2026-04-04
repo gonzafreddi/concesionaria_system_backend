@@ -22,6 +22,7 @@ import { SalesService } from './sales.service';
 describe('SalesService', () => {
   let service: SalesService;
   let dataSource: { transaction: jest.Mock; createQueryRunner: jest.Mock };
+  let saleBalanceCalculatorServiceMock: { calculate: jest.Mock };
 
   // Mock base para cubrir las dependencias inyectadas por TypeORM
   const repositoryMock = {
@@ -39,6 +40,10 @@ describe('SalesService', () => {
     dataSource = {
       transaction: jest.fn(),
       createQueryRunner: jest.fn(),
+    };
+
+    saleBalanceCalculatorServiceMock = {
+      calculate: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -88,9 +93,7 @@ describe('SalesService', () => {
         },
         {
           provide: SaleBalanceCalculatorService,
-          useValue: {
-            calculate: jest.fn(),
-          },
+          useValue: saleBalanceCalculatorServiceMock,
         },
       ],
     }).compile();
@@ -166,6 +169,11 @@ describe('SalesService', () => {
     };
 
     dataSource.transaction.mockImplementation(async (callback) => callback(manager));
+    saleBalanceCalculatorServiceMock.calculate.mockReturnValue({
+      tradeInsTotal: 20000,
+      paymentsTotal: 0,
+      pendingBalance: 80000,
+    });
 
     await service.create({
       clientId: 1,

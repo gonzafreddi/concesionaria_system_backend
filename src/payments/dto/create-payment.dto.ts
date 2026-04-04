@@ -7,7 +7,11 @@ import {
   IsString,
   Min,
 } from 'class-validator';
-import { Currency, PaymentMethod } from '../entities/payment.entity';
+import {
+  Currency,
+  PaymentMethod,
+  PaymentStatus,
+} from '../entities/payment.entity';
 import { Transform } from 'class-transformer';
 
 /**
@@ -47,4 +51,9 @@ export class CreatePaymentDto {
   @ApiProperty({ required: true, enum: Currency })
   @IsEnum(Currency)
   currency: Currency;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  status?: PaymentStatus;
 }

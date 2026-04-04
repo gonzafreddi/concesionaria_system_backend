@@ -38,7 +38,8 @@ export class PaymentsService {
    * El pago se crea con status PENDING.
    */
   async createPayment(createPaymentDto: CreatePaymentDto): Promise<Payment> {
-    const { saleId, amount, method, notes, currency } = createPaymentDto;
+    const { saleId, amount, method, notes, currency, status } =
+      createPaymentDto;
 
     // Validar que la venta existe
     const sale = await this.saleRepository.findOne({
@@ -73,7 +74,9 @@ export class PaymentsService {
       Number(sale.totalPaid) + tradeInsTotal + amount >
       Number(sale.finalPrice)
     ) {
-      throw new BadRequestException('El monto del pago excede el saldo pendiente');
+      throw new BadRequestException(
+        'El monto del pago excede el saldo pendiente',
+      );
     }
 
     // Crear el pago
@@ -276,9 +279,10 @@ export class PaymentsService {
       relations: ['tradeIns'],
     });
 
-    const tradeInValues = saleWithTradeIns?.tradeIns?.map((tradeIn) =>
-      Number(tradeIn.tradeInValue ?? 0),
-    ) ?? [];
+    const tradeInValues =
+      saleWithTradeIns?.tradeIns?.map((tradeIn) =>
+        Number(tradeIn.tradeInValue ?? 0),
+      ) ?? [];
 
     const balance = this.saleBalanceCalculatorService.calculate({
       finalPrice: Number(sale.finalPrice ?? 0),

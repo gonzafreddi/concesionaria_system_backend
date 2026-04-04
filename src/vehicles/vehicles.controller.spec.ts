@@ -46,4 +46,17 @@ describe('VehiclesController', () => {
     ]);
     expect(vehiclesServiceMock.getVehicleForSale).toHaveBeenCalled();
   });
+
+  it('expone purchaseDate en el detalle del vehiculo', async () => {
+    vehiclesServiceMock.findOne.mockResolvedValue({
+      id: 7,
+      purchaseDate: '2026-03-24T15:30:00.000Z',
+    });
+
+    await expect(controller.findOne(7)).resolves.toEqual({
+      id: 7,
+      purchaseDate: '2026-03-24T15:30:00.000Z',
+    });
+    expect(vehiclesServiceMock.findOne).toHaveBeenCalledWith(7);
+  });
 });

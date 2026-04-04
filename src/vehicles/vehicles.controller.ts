@@ -13,6 +13,7 @@ import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehicleSaleOptionDto } from './dto/vehicle-sale-option.dto';
+import { VehicleDetailDto } from './dto/vehicle-detail.dto';
 
 @ApiTags('vehicles')
 @Controller('vehicles')
@@ -48,6 +49,10 @@ export class VehiclesController {
     return this.vehiclesService.getPendingInspectionVehicles();
   }
 
+  @ApiOkResponse({
+    description: 'Retorna el detalle del vehículo, incluyendo fecha de compra si existe',
+    type: VehicleDetailDto,
+  })
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.vehiclesService.findOne(id);

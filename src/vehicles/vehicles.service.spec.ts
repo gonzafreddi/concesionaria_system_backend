@@ -71,4 +71,32 @@ describe('VehiclesService', () => {
       },
     ]);
   });
+
+  it('incluye purchaseDate en formato ISO al obtener el detalle del vehiculo', async () => {
+    repositoryMock.findOne.mockResolvedValue({
+      id: 7,
+      type: VehicleType.USED,
+      brand: 'Ford',
+      model: 'Focus',
+      year: 2020,
+      color: 'Gris',
+      vehiclePlate: 'AA123BB',
+      price: '18500000',
+      acquisitionPrice: '15000000',
+      status: VehicleStatus.AVAILABLE,
+      purchases: [
+        {
+          purchaseDate: new Date('2026-03-24T15:30:00.000Z'),
+        },
+      ],
+    });
+
+    const result = await service.findOne(7);
+
+    expect(repositoryMock.findOne).toHaveBeenCalledWith({
+      where: { id: 7 },
+      relations: ['purchases'],
+    });
+    expect(result.purchaseDate).toBe('2026-03-24T15:30:00.000Z');
+  });
 });

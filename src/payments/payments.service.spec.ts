@@ -200,4 +200,70 @@ describe('PaymentsService', () => {
     expect(sale.status).toBe(SaleStatus.CONFIRMED);
     expect(manager.save).toHaveBeenCalledWith(sale);
   });
+
+  it('saca la venta de DRAFT cuando se registra un pago pendiente valido', async () => {
+    const sale = {
+      id: 17,
+      status: SaleStatus.DRAFT,
+      totalPaid: 0,
+      finalPrice: 12000,
+      tradeIns: [],
+      payments: [],
+    } as Sale;
+
+    const createdPayment = {
+      id: 102,
+      sale,
+      amount: 1000,
+      status: PaymentStatus.PENDING,
+      currency: Currency.ARS,
+      paidAt: null,
+    } as Payment;
+
+    const manager = {
+      findOne: jest.fn().mockImplementation((entity) => {
+        if (entity === Sale) {
+          return Promise.resolve(sale);
+        }
+        return Promise.resolve(null);
+      }),
+      create: jest.fn().mockImplementation((_entity, payload) => ({
+        ...createdPayment,
+        ...payload,
+      })),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+      find: jest.fn().mockResolvedValue([]),
+    };
+
+    const queryRunner = {
+      manager,
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+    };
+
+    dataSourceMock.createQueryRunner.mockReturnValue(queryRunner);
+    saleBalanceCalculatorServiceMock.calculate.mockReturnValue({
+      tradeInsTotal: 0,
+      paymentsTotal: 0,
+      pendingBalance: 12000,
+    });
+    paymentRepositoryMock.findOne.mockResolvedValue({
+      ...createdPayment,
+      sale: { ...sale, status: SaleStatus.PARTIALLY_PAID },
+    });
+
+    const result = await service.createPayment({
+      saleId: 17,
+      amount: 1000,
+      method: PaymentMethod.CASH,
+      currency: Currency.ARS,
+      status: PaymentStatus.PENDING,
+    });
+
+    expect(result.status).toBe(PaymentStatus.PENDING);
+    expect(sale.status).toBe(SaleStatus.PARTIALLY_PAID);
+  });
 });

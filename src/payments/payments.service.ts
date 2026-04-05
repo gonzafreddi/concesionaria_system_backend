@@ -114,6 +114,9 @@ export class PaymentsService {
       if (resolvedStatus === PaymentStatus.CONFIRMED) {
         await this.recalculateSaleTotalPaid(sale, queryRunner);
         await queryRunner.manager.save(sale);
+      } else if (resolvedStatus !== PaymentStatus.REJECTED) {
+        sale.status = SaleStatus.PARTIALLY_PAID;
+        await queryRunner.manager.save(sale);
       }
 
       await queryRunner.commitTransaction();
@@ -297,6 +300,9 @@ export class PaymentsService {
     const confirmedPayments = await queryRunner.manager.find(Payment, {
       where: { sale: { id: sale.id }, status: PaymentStatus.CONFIRMED },
     });
+    const validPayments = await queryRunner.manager.find(Payment, {
+      where: { sale: { id: sale.id } },
+    });
 
     // Calcular nuevo totalPaid
     sale.totalPaid = confirmedPayments.reduce(
@@ -324,8 +330,11 @@ export class PaymentsService {
       paymentValues: [Number(sale.totalPaid ?? 0)],
     });
     const coveredAmount = balance.tradeInsTotal + balance.paymentsTotal;
+    const hasValidPayments = validPayments.some(
+      (payment) => payment.status !== PaymentStatus.REJECTED,
+    );
 
-    if (coveredAmount <= 0) {
+    if (coveredAmount <= 0 && !hasValidPayments) {
       sale.status = SaleStatus.DRAFT;
       return;
     }

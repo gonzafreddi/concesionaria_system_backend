@@ -700,8 +700,11 @@ export class SalesService {
       paymentValues: [Number(sale.totalPaid ?? 0)],
     });
     const coveredAmount = balance.tradeInsTotal + balance.paymentsTotal;
+    const hasValidPayments = Array.isArray(sale.payments)
+      ? sale.payments.some((payment) => payment.status !== PaymentStatus.REJECTED)
+      : false;
 
-    if (coveredAmount <= 0) {
+    if (coveredAmount <= 0 && !hasValidPayments) {
       return SaleStatus.DRAFT;
     }
 

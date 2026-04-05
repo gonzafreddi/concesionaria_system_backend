@@ -83,9 +83,7 @@ export class PaymentsService {
       if (balance.pendingBalance <= 0) {
         sale.status = SaleStatus.CONFIRMED;
         await queryRunner.manager.save(sale);
-        throw new BadRequestException(
-          'La venta ya no tiene saldo pendiente',
-        );
+        throw new BadRequestException('La venta ya no tiene saldo pendiente');
       }
 
       const nextCoveredAmount =
@@ -106,22 +104,9 @@ export class PaymentsService {
         notes: notes || null,
         status: resolvedStatus,
         currency,
-        paidAt:
-          resolvedStatus === PaymentStatus.CONFIRMED ? new Date() : null,
+        paidAt: resolvedStatus === PaymentStatus.CONFIRMED ? new Date() : null,
       });
-
       await queryRunner.manager.save(payment);
-
-      if (resolvedStatus === PaymentStatus.CONFIRMED) {
-        // Si el pago entra ya confirmado, recalculamos cierre y estado del vehículo.
-        await this.recalculateSaleTotalPaid(sale, queryRunner);
-        await this.syncVehicleStatusWithSale(sale, queryRunner);
-        await queryRunner.manager.save(sale);
-      } else if (resolvedStatus !== PaymentStatus.REJECTED) {
-        sale.status = SaleStatus.PARTIALLY_PAID;
-        await queryRunner.manager.save(sale);
-      }
-
       await queryRunner.commitTransaction();
       return this.getPaymentById(payment.id);
     } catch (error) {
@@ -144,6 +129,7 @@ export class PaymentsService {
 
     return await this.paymentRepository.find({
       where: { sale: { id: saleId } },
+      relations: ['sale'],
       order: { createdAt: 'DESC' },
     });
   }

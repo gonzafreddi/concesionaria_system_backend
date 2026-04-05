@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
   Index,
@@ -51,8 +52,11 @@ export class Payment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Index()
-  @ManyToOne(() => Sale, (s) => s.payments, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Sale, (s) => s.payments, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
+  @JoinColumn({ name: 'saleId' })
   sale: Sale;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })

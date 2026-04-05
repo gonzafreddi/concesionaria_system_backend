@@ -8,6 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { Public } from './decorators/public.decorator';
 
 /**
  * Controlador de autenticación
@@ -23,6 +24,7 @@ export class AuthController {
    * Autentica un usuario con email y contraseña
    */
   @Post('login')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Login de usuario',
@@ -83,6 +85,7 @@ export class AuthController {
    * Valida que un token JWT sea válido
    */
   @Post('verify')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Verificar token JWT',

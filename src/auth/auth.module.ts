@@ -19,7 +19,7 @@ import { RolesGuard } from './roles.guard';
     UsersModule,
     TypeOrmModule.forFeature([User]),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+      secret: process.env.JWT_SECRET,
       signOptions: {
         expiresIn: '1d',
       },

@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   OneToMany,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Quote } from '../../quotes/entities/quote.entity';
 import { Sale } from '../../sales/entities/sale.entity';
 import { VehicleRequest } from '../../vehicle_request/entities/vehicle_request.entity';
@@ -30,6 +31,7 @@ export class User {
   role: UserRole;
 
   @Column()
+  @Exclude({ toPlainOnly: true })
   password: string;
 
   @CreateDateColumn({ name: 'created_at' })

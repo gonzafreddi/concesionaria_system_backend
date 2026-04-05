@@ -26,7 +26,7 @@ import { LoggerMiddleware } from './logger/logger.middleware';
       username: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASS || 'postgres',
       database: process.env.DB_NAME || 'concesionaria',
-      synchronize: true,
+      synchronize: false,
       autoLoadEntities: true,
     }),
     VehicleRequestModule,

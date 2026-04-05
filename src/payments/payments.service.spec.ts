@@ -4,6 +4,7 @@ import { BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { SaleBalanceCalculatorService } from '../sales/sale-balance-calculator.service';
 import { Sale, SaleStatus } from '../sales/entities/sale.entity';
+import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
 import {
   Currency,
   Payment,
@@ -53,6 +54,10 @@ describe('PaymentsService', () => {
           useValue: saleRepositoryMock,
         },
         {
+          provide: getRepositoryToken(Vehicle),
+          useValue: {},
+        },
+        {
           provide: DataSource,
           useValue: dataSourceMock,
         },
@@ -71,6 +76,10 @@ describe('PaymentsService', () => {
   });
 
   it('marca la venta como CONFIRMED cuando un pago confirmado cancela la deuda', async () => {
+    const vehicle = {
+      id: 99,
+      status: VehicleStatus.RESERVED,
+    } as Vehicle;
     const sale = {
       id: 17,
       status: SaleStatus.DRAFT,
@@ -78,6 +87,7 @@ describe('PaymentsService', () => {
       finalPrice: 12000,
       tradeIns: [],
       payments: [],
+      vehicle,
     } as Sale;
 
     const createdPayment = {
@@ -146,6 +156,7 @@ describe('PaymentsService', () => {
     expect(result.sale.id).toBe(17);
     expect(sale.totalPaid).toBe(12000);
     expect(sale.status).toBe(SaleStatus.CONFIRMED);
+    expect(vehicle.status).toBe(VehicleStatus.SOLD);
   });
 
   it('bloquea nuevos pagos si la venta ya no tiene saldo pendiente real', async () => {
@@ -265,5 +276,56 @@ describe('PaymentsService', () => {
 
     expect(result.status).toBe(PaymentStatus.PENDING);
     expect(sale.status).toBe(SaleStatus.PARTIALLY_PAID);
+  });
+
+  it('bloquea confirmar un pago pendiente extra cuando la venta ya esta cubierta', async () => {
+    const sale = {
+      id: 17,
+      status: SaleStatus.PARTIALLY_PAID,
+      totalPaid: 10000,
+      finalPrice: 12000,
+    } as Sale;
+
+    const payment = {
+      id: 103,
+      sale,
+      amount: 3000,
+      status: PaymentStatus.PENDING,
+      currency: Currency.ARS,
+    } as Payment;
+
+    const manager = {
+      findOne: jest.fn().mockImplementation((entity) => {
+        if (entity === Payment) {
+          return Promise.resolve(payment);
+        }
+        if (entity === Sale) {
+          return Promise.resolve({
+            ...sale,
+            tradeIns: [{ tradeInValue: 2000 }],
+          });
+        }
+        return Promise.resolve(null);
+      }),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+      find: jest.fn(),
+    };
+
+    const queryRunner = {
+      manager,
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+    };
+
+    dataSourceMock.createQueryRunner.mockReturnValue(queryRunner);
+
+    await expect(service.confirmPayment(103)).rejects.toThrow(
+      new BadRequestException(
+        'El pago excede el saldo pendiente de la venta',
+      ),
+    );
   });
 });

@@ -251,7 +251,11 @@ export class SalesService {
       }
 
       // 🚗 Reservar vehículo principal
-      vehicle.status = VehicleStatus.RESERVED;
+      // Si la operación nace ya cubierta por trade-in, el vehículo sale vendido.
+      vehicle.status =
+        sale.status === SaleStatus.CONFIRMED
+          ? VehicleStatus.SOLD
+          : VehicleStatus.RESERVED;
       await manager.save(vehicle);
 
       return sale;
@@ -418,7 +422,7 @@ export class SalesService {
       // Obtener sale con lock para transacción
       const sale = await queryRunner.manager.findOne(Sale, {
         where: { id: saleId },
-        relations: ['payments', 'tradeIns'],
+        relations: ['payments', 'tradeIns', 'vehicle'],
       });
 
       if (!sale)
@@ -551,6 +555,8 @@ export class SalesService {
       sale.status = this.calculateSaleStatus(sale);
       vehicle.status = VehicleStatus.INSPECTION;
       await queryRunner.manager.save(vehicle);
+      // Mantener sincronizado el estado del vehículo principal con el cierre financiero.
+      await this.syncPrimaryVehicleStatus(sale, queryRunner.manager);
 
       const updatedSale = await queryRunner.manager.save(sale);
 
@@ -586,7 +592,7 @@ export class SalesService {
       const sale = payment.sale;
       const saleWithTradeIns = await queryRunner.manager.findOne(Sale, {
         where: { id: sale.id },
-        relations: ['tradeIns'],
+        relations: ['tradeIns', 'vehicle'],
       });
       const wasConfirmed = payment.status === PaymentStatus.CONFIRMED;
 
@@ -600,8 +606,31 @@ export class SalesService {
         );
       }
 
+      if (
+        status === PaymentStatus.CONFIRMED &&
+        saleWithTradeIns.status === SaleStatus.CONFIRMED &&
+        !wasConfirmed
+      ) {
+        throw new BadRequestException(
+          'No se pueden confirmar pagos de una operación cerrada',
+        );
+      }
+
       // Aplicar cambio de estado
       if (status === PaymentStatus.CONFIRMED) {
+        // Validar nuevamente el saldo dentro de la transacción para evitar sobrecobro.
+        const tradeInsTotal = this.getTradeInsTotal(saleWithTradeIns.tradeIns);
+        const nextCoveredAmount =
+          Number(saleWithTradeIns.totalPaid ?? 0) +
+          tradeInsTotal +
+          Number(payment.amount ?? 0);
+
+        if (!wasConfirmed && nextCoveredAmount > Number(saleWithTradeIns.finalPrice)) {
+          throw new BadRequestException(
+            'El pago excede el saldo pendiente de la operación',
+          );
+        }
+
         payment.status = PaymentStatus.CONFIRMED;
         payment.paidAt = new Date();
         saleWithTradeIns.totalPaid += Number(payment.amount);
@@ -614,6 +643,8 @@ export class SalesService {
       }
 
       saleWithTradeIns.status = this.calculateSaleStatus(saleWithTradeIns);
+      // Cuando la venta queda cubierta, el vehículo principal debe quedar vendido.
+      await this.syncPrimaryVehicleStatus(saleWithTradeIns, queryRunner.manager);
 
       await queryRunner.manager.save(payment);
       await queryRunner.manager.save(saleWithTradeIns);
@@ -759,5 +790,21 @@ export class SalesService {
       (total, tradeIn) => total + Number(tradeIn.tradeInValue ?? 0),
       0,
     );
+  }
+
+  private async syncPrimaryVehicleStatus(
+    sale: Sale,
+    manager: Pick<Repository<Vehicle>, 'save'>,
+  ) {
+    if (!sale.vehicle) {
+      return;
+    }
+
+    // El vehículo principal queda reservado mientras haya saldo y vendido al cerrar.
+    sale.vehicle.status =
+      sale.status === SaleStatus.CONFIRMED
+        ? VehicleStatus.SOLD
+        : VehicleStatus.RESERVED;
+    await manager.save(sale.vehicle);
   }
 }

@@ -9,6 +9,7 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Sale, SaleStatus } from '../sales/entities/sale.entity';
 import { SaleBalanceCalculatorService } from '../sales/sale-balance-calculator.service';
+import { VehicleStatus } from '../vehicles/entities/vehicle.entity';
 
 /**
  * PAYMENTS SERVICE - Gestión de pagos
@@ -112,7 +113,9 @@ export class PaymentsService {
       await queryRunner.manager.save(payment);
 
       if (resolvedStatus === PaymentStatus.CONFIRMED) {
+        // Si el pago entra ya confirmado, recalculamos cierre y estado del vehículo.
         await this.recalculateSaleTotalPaid(sale, queryRunner);
+        await this.syncVehicleStatusWithSale(sale, queryRunner);
         await queryRunner.manager.save(sale);
       } else if (resolvedStatus !== PaymentStatus.REJECTED) {
         sale.status = SaleStatus.PARTIALLY_PAID;
@@ -194,13 +197,48 @@ export class PaymentsService {
         );
       }
 
+      const sale = payment.sale;
+
+      if (sale.status === SaleStatus.CONFIRMED) {
+        throw new BadRequestException(
+          'No se pueden confirmar pagos de una venta cerrada',
+        );
+      }
+
+      const saleWithTradeIns = await queryRunner.manager.findOne(Sale, {
+        where: { id: sale.id },
+        relations: ['tradeIns'],
+      });
+
+      if (!saleWithTradeIns) {
+        throw new NotFoundException(`Venta ${sale.id} no encontrada`);
+      }
+
+      const tradeInsTotal =
+        saleWithTradeIns.tradeIns?.reduce(
+          (total, tradeIn) => total + Number(tradeIn.tradeInValue ?? 0),
+          0,
+        ) ?? 0;
+      const nextCoveredAmount =
+        Number(sale.totalPaid ?? 0) +
+        tradeInsTotal +
+        Number(payment.amount ?? 0);
+
+      // Evita confirmar pagos pendientes que excedan el saldo real restante.
+      if (nextCoveredAmount > Number(sale.finalPrice ?? 0)) {
+        throw new BadRequestException(
+          'El pago excede el saldo pendiente de la venta',
+        );
+      }
+
       // Confirmar el pago
       payment.status = PaymentStatus.CONFIRMED;
       payment.paidAt = new Date();
 
       // Recalcular totalPaid de la venta
-      const sale = payment.sale;
       await this.recalculateSaleTotalPaid(sale, queryRunner);
+      // Reflejar inmediatamente si el vehículo pasa de reservado a vendido.
+      await this.syncVehicleStatusWithSale(sale, queryRunner);
 
       await queryRunner.manager.save(payment);
       await queryRunner.manager.save(sale);
@@ -250,6 +288,8 @@ export class PaymentsService {
       if (wasConfirmed) {
         const sale = payment.sale;
         await this.recalculateSaleTotalPaid(sale, queryRunner);
+        // Si se rechaza un pago confirmado, el vehículo vuelve al estado coherente.
+        await this.syncVehicleStatusWithSale(sale, queryRunner);
         await queryRunner.manager.save(sale);
       }
 
@@ -343,5 +383,28 @@ export class PaymentsService {
       balance.pendingBalance <= 0
         ? SaleStatus.CONFIRMED
         : SaleStatus.PARTIALLY_PAID;
+  }
+
+  private async syncVehicleStatusWithSale(
+    sale: Sale,
+    queryRunner: QueryRunner,
+  ): Promise<void> {
+    const saleWithVehicle = await queryRunner.manager.findOne(Sale, {
+      where: { id: sale.id },
+      relations: ['vehicle'],
+    });
+
+    if (!saleWithVehicle?.vehicle) {
+      return;
+    }
+
+    // Venta saldada: vehículo vendido. Venta aún abierta: vehículo reservado.
+    saleWithVehicle.vehicle.status =
+      sale.status === SaleStatus.CONFIRMED
+        ? VehicleStatus.SOLD
+        : VehicleStatus.RESERVED;
+    sale.vehicle = saleWithVehicle.vehicle;
+
+    await queryRunner.manager.save(saleWithVehicle.vehicle);
   }
 }

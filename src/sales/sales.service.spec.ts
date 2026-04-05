@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 jest.mock('../vehicles/vehicles.service', () => ({
@@ -7,7 +8,7 @@ jest.mock('../vehicles/vehicles.service', () => ({
 }));
 
 import { Client } from '../clients/entities/client.entity';
-import { Payment } from '../payments/entities/payment.entity';
+import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { Quote } from '../quotes/entities/quote.entity';
 import { User } from '../users/entities/user.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
@@ -187,5 +188,109 @@ describe('SalesService', () => {
     } as any);
 
     expect(tradeInVehicle.status).toBe(VehicleStatus.PRESALE);
+  });
+
+  it('marca el vehiculo principal como vendido cuando un pago completa la venta', async () => {
+    const vehicle = {
+      id: 1,
+      status: VehicleStatus.RESERVED,
+    } as Vehicle;
+    const sale = {
+      id: 10,
+      status: SaleStatus.PARTIALLY_PAID,
+      totalPaid: 70000,
+      finalPrice: 100000,
+      vehicle,
+      tradeIns: [],
+    } as Sale;
+    const payment = {
+      id: 20,
+      amount: 30000,
+      status: PaymentStatus.PENDING,
+      sale,
+    } as Payment;
+
+    const manager = {
+      findOne: jest.fn().mockImplementation((entity) => {
+        if (entity === Payment) {
+          return Promise.resolve(payment);
+        }
+        if (entity === Sale) {
+          return Promise.resolve(sale);
+        }
+        return Promise.resolve(null);
+      }),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+    };
+
+    const queryRunner = {
+      manager,
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+    };
+
+    dataSource.createQueryRunner.mockReturnValue(queryRunner);
+    saleBalanceCalculatorServiceMock.calculate.mockReturnValue({
+      tradeInsTotal: 0,
+      paymentsTotal: 100000,
+      pendingBalance: 0,
+    });
+
+    const result = await service.confirmPayment(20, PaymentStatus.CONFIRMED);
+
+    expect(result.sale.status).toBe(SaleStatus.CONFIRMED);
+    expect(vehicle.status).toBe(VehicleStatus.SOLD);
+  });
+
+  it('bloquea confirmar un pago extra si la venta ya quedo cerrada', async () => {
+    const sale = {
+      id: 10,
+      status: SaleStatus.CONFIRMED,
+      totalPaid: 100000,
+      finalPrice: 100000,
+      vehicle: { id: 1, status: VehicleStatus.SOLD } as Vehicle,
+      tradeIns: [],
+    } as Sale;
+    const payment = {
+      id: 21,
+      amount: 5000,
+      status: PaymentStatus.PENDING,
+      sale,
+    } as Payment;
+
+    const manager = {
+      findOne: jest.fn().mockImplementation((entity) => {
+        if (entity === Payment) {
+          return Promise.resolve(payment);
+        }
+        if (entity === Sale) {
+          return Promise.resolve(sale);
+        }
+        return Promise.resolve(null);
+      }),
+      save: jest.fn(),
+    };
+
+    const queryRunner = {
+      manager,
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+    };
+
+    dataSource.createQueryRunner.mockReturnValue(queryRunner);
+
+    await expect(
+      service.confirmPayment(21, PaymentStatus.CONFIRMED),
+    ).rejects.toThrow(
+      new BadRequestException(
+        'No se pueden confirmar pagos de una operación cerrada',
+      ),
+    );
   });
 });

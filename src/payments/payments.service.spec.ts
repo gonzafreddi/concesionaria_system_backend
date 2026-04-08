@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 import { SaleBalanceCalculatorService } from '../sales/sale-balance-calculator.service';
 import { Sale, SaleStatus } from '../sales/entities/sale.entity';
 import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
+import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
 import {
   Currency,
   Payment,
@@ -98,6 +99,11 @@ describe('PaymentsService', () => {
       currency: Currency.ARS,
       paidAt: new Date(),
     } as Payment;
+    const consignment = {
+      id: 12,
+      vehicleId: 99,
+      status: ConsignmentStatus.ACTIVE,
+    } as Consignment;
 
     const manager = {
       findOne: jest.fn().mockImplementation((entity) => {
@@ -106,6 +112,9 @@ describe('PaymentsService', () => {
         }
         if (entity === Payment) {
           return Promise.resolve({ ...createdPayment, sale });
+        }
+        if (entity === Consignment) {
+          return Promise.resolve(consignment);
         }
         return Promise.resolve(null);
       }),
@@ -140,7 +149,11 @@ describe('PaymentsService', () => {
       });
     paymentRepositoryMock.findOne.mockResolvedValue({
       ...createdPayment,
-      sale,
+      sale: {
+        ...sale,
+        totalPaid: 12000,
+        status: SaleStatus.CONFIRMED,
+      },
     });
 
     const result = await service.createPayment({
@@ -154,9 +167,10 @@ describe('PaymentsService', () => {
 
     expect(result.status).toBe(PaymentStatus.CONFIRMED);
     expect(result.sale.id).toBe(17);
-    expect(sale.totalPaid).toBe(12000);
-    expect(sale.status).toBe(SaleStatus.CONFIRMED);
+    expect(result.sale.totalPaid).toBe(12000);
+    expect(result.sale.status).toBe(SaleStatus.CONFIRMED);
     expect(vehicle.status).toBe(VehicleStatus.SOLD);
+    expect(consignment.status).toBe(ConsignmentStatus.SOLD);
   });
 
   it('bloquea nuevos pagos si la venta ya no tiene saldo pendiente real', async () => {
@@ -275,7 +289,7 @@ describe('PaymentsService', () => {
     });
 
     expect(result.status).toBe(PaymentStatus.PENDING);
-    expect(sale.status).toBe(SaleStatus.PARTIALLY_PAID);
+    expect(result.sale.status).toBe(SaleStatus.PARTIALLY_PAID);
   });
 
   it('bloquea confirmar un pago pendiente extra cuando la venta ya esta cubierta', async () => {

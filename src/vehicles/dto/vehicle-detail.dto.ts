@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { VehicleStatus, VehicleType } from '../entities/vehicle.entity';
+import {
+  VehicleEntryType,
+  VehicleStatus,
+  VehicleType,
+} from '../entities/vehicle.entity';
 
 export class VehicleDetailDto {
   @ApiProperty({ example: 12 })
@@ -40,4 +44,13 @@ export class VehicleDetailDto {
 
   @ApiProperty({ enum: VehicleStatus, example: VehicleStatus.AVAILABLE })
   status: VehicleStatus;
+
+  @ApiProperty({
+    enum: VehicleEntryType,
+    example: VehicleEntryType.DIRECT_PURCHASE,
+  })
+  entryType: VehicleEntryType;
+
+  @ApiPropertyOptional({ example: 15, nullable: true })
+  ownerClientId: number | null;
 }

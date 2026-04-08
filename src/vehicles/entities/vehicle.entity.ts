@@ -17,6 +17,8 @@ import { PreSaleDocumentation } from '../../pre-sale/entities/pre_sale_documenta
 import { PreSaleBodywork } from '../../pre-sale/entities/pre_sale_bodywork.entity';
 import { PreSaleMechanical } from '../../pre-sale/entities/pre_sale_mechanical.entity';
 import { Purchase } from '../../purchase/entities/purchase.entity';
+import { Client } from '../../clients/entities/client.entity';
+import { Consignment } from '../../consignment/entities/consignment.entity';
 export enum VehicleType {
   NEW = 'NEW',
   USED = 'USED',
@@ -29,6 +31,12 @@ export enum VehicleStatus {
   SOLD = 'SOLD',
   INSPECTION = 'INSPECTION',
   PRESALE = 'PRESALE',
+}
+
+export enum VehicleEntryType {
+  DIRECT_PURCHASE = 'DIRECT_PURCHASE',
+  CONSIGNMENT = 'CONSIGNMENT',
+  TRADE_IN = 'TRADE_IN',
 }
 
 @Entity('vehicles')
@@ -79,6 +87,17 @@ export class Vehicle {
   })
   status: VehicleStatus;
 
+  @Column({
+    name: 'entry_type',
+    type: 'enum',
+    enum: VehicleEntryType,
+    default: VehicleEntryType.DIRECT_PURCHASE,
+  })
+  entryType: VehicleEntryType;
+
+  @Column({ name: 'owner_client_id', type: 'int', nullable: true })
+  ownerClientId: number | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
@@ -96,8 +115,15 @@ export class Vehicle {
   @JoinColumn({ name: 'acquisition_type_id' })
   acquisitionType: VehicleAcquisitionTypes;
 
+  @ManyToOne(() => Client, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'owner_client_id' })
+  ownerClient: Client | null;
+
   @OneToMany(() => Inspection, (i: Inspection) => i.vehicle)
   inspections: Inspection[];
+
+  @OneToMany(() => Consignment, (consignment) => consignment.vehicle)
+  consignments: Consignment[];
 
   @OneToOne(
     () => PreSaleAesthetic,

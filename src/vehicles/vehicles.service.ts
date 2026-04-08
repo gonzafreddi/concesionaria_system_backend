@@ -3,8 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { Vehicle } from './entities/vehicle.entity';
-import { VehicleStatus } from './entities/vehicle.entity';
+import { Vehicle, VehicleEntryType, VehicleStatus } from './entities/vehicle.entity';
 import { PreSaleStatus } from '../pre-sale/entities/pre-sale-status.enum';
 import { VehicleSaleOptionDto } from './dto/vehicle-sale-option.dto';
 import { VehicleDetailDto } from './dto/vehicle-detail.dto';
@@ -57,6 +56,8 @@ export class VehiclesService {
           : null,
       purchaseDate,
       status: vehicle.status,
+      entryType: vehicle.entryType,
+      ownerClientId: vehicle.ownerClientId ?? null,
     };
   }
 
@@ -65,6 +66,9 @@ export class VehiclesService {
       ...createVehicleDto,
       status:
         createVehicleDto.status ?? VehicleStatus.PENDING_INSPECTION,
+      entryType:
+        createVehicleDto.entryType ?? VehicleEntryType.DIRECT_PURCHASE,
+      ownerClientId: createVehicleDto.ownerClientId ?? null,
     } as any);
     return this.vehiclesRepository.save(vehicle);
   }
@@ -113,6 +117,8 @@ export class VehiclesService {
       vehiclePlate: vehicle.vehiclePlate,
       price: Number(vehicle.price),
       status: vehicle.status,
+      entryType: vehicle.entryType,
+      ownerClientId: vehicle.ownerClientId ?? null,
     }));
   }
 
@@ -134,6 +140,8 @@ export class VehiclesService {
         vehiclePlate: vehicle.vehiclePlate,
         price: Number(vehicle.price),
         status: vehicle.status,
+        entryType: vehicle.entryType,
+        ownerClientId: vehicle.ownerClientId ?? null,
       }));
   }
 

@@ -16,6 +16,7 @@ import { AuthModule } from './auth/auth.module';
 import { PreSaleModule } from './pre-sale/pre-sale.module';
 import { DocumentsModule } from './documents/documents.module';
 import { PurchaseModule } from './purchase/purchase.module';
+import { ConsignmentModule } from './consignment/consignment.module';
 import { LoggerMiddleware } from './logger/logger.middleware';
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { LoggerMiddleware } from './logger/logger.middleware';
       username: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASS || 'postgres',
       database: process.env.DB_NAME || 'concesionaria',
-      synchronize: false,
+      synchronize: true,
       autoLoadEntities: true,
     }),
     VehicleRequestModule,
@@ -42,6 +43,7 @@ import { LoggerMiddleware } from './logger/logger.middleware';
     PreSaleModule,
     DocumentsModule,
     PurchaseModule,
+    ConsignmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

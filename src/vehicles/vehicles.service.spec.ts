@@ -1,7 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { In } from 'typeorm';
-import { VehicleStatus, VehicleType, Vehicle } from './entities/vehicle.entity';
+import {
+  VehicleEntryType,
+  VehicleStatus,
+  VehicleType,
+  Vehicle,
+} from './entities/vehicle.entity';
 import { VehiclesService } from './vehicles.service';
 
 describe('VehiclesService', () => {
@@ -47,6 +52,8 @@ describe('VehiclesService', () => {
         vehiclePlate: 'AA123BB',
         price: '18500000',
         status: VehicleStatus.AVAILABLE,
+        entryType: VehicleEntryType.DIRECT_PURCHASE,
+        ownerClientId: null,
       },
     ]);
 
@@ -68,6 +75,8 @@ describe('VehiclesService', () => {
         vehiclePlate: 'AA123BB',
         price: 18500000,
         status: VehicleStatus.AVAILABLE,
+        entryType: VehicleEntryType.DIRECT_PURCHASE,
+        ownerClientId: null,
       },
     ]);
   });
@@ -84,6 +93,8 @@ describe('VehiclesService', () => {
       price: '18500000',
       acquisitionPrice: '15000000',
       status: VehicleStatus.AVAILABLE,
+      entryType: VehicleEntryType.CONSIGNMENT,
+      ownerClientId: 18,
       purchases: [
         {
           purchaseDate: new Date('2026-03-24T15:30:00.000Z'),
@@ -98,6 +109,8 @@ describe('VehiclesService', () => {
       relations: ['purchases'],
     });
     expect(result.purchaseDate).toBe('2026-03-24T15:30:00.000Z');
+    expect(result.entryType).toBe(VehicleEntryType.CONSIGNMENT);
+    expect(result.ownerClientId).toBe(18);
   });
 
   it('lista solo los vehiculos disponibles para compra cuando no tienen compras asociadas', async () => {
@@ -112,6 +125,8 @@ describe('VehiclesService', () => {
         vehiclePlate: 'AB123CD',
         price: '14350000',
         status: VehicleStatus.PENDING_INSPECTION,
+        entryType: VehicleEntryType.DIRECT_PURCHASE,
+        ownerClientId: null,
         purchases: [],
       },
       {
@@ -124,6 +139,8 @@ describe('VehiclesService', () => {
         vehiclePlate: 'AC456EF',
         price: '11900000',
         status: VehicleStatus.AVAILABLE,
+        entryType: VehicleEntryType.TRADE_IN,
+        ownerClientId: 22,
         purchases: [{ id: 4 }],
       },
     ]);
@@ -145,6 +162,8 @@ describe('VehiclesService', () => {
         vehiclePlate: 'AB123CD',
         price: 14350000,
         status: VehicleStatus.PENDING_INSPECTION,
+        entryType: VehicleEntryType.DIRECT_PURCHASE,
+        ownerClientId: null,
       },
     ]);
   });

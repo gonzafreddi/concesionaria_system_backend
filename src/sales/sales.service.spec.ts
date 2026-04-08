@@ -14,6 +14,7 @@ import { User } from '../users/entities/user.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { VehicleStatus } from '../vehicles/entities/vehicle.entity';
 import { VehiclesService } from '../vehicles/vehicles.service';
+import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
 import { SaleAccountBalanceService } from './sale-account-balance.service';
 import { SaleBalanceCalculatorService } from './sale-balance-calculator.service';
 import { DocumentationStatus, Sale, SaleStatus, SaleType, TransferStatus } from './entities/sale.entity';
@@ -190,6 +191,79 @@ describe('SalesService', () => {
     expect(tradeInVehicle.status).toBe(VehicleStatus.PRESALE);
   });
 
+  it('marca la consignacion como RESERVED cuando se crea una venta para un vehiculo consignado', async () => {
+    const availableVehicle = {
+      id: 1,
+      price: 100000,
+      status: VehicleStatus.AVAILABLE,
+      vehiclePlate: 'AAA111',
+    } as Vehicle;
+
+    const client = { id: 1 } as Client;
+    const user = { id: 1 } as User;
+    const consignment = {
+      id: 3,
+      vehicleId: 1,
+      status: ConsignmentStatus.ACTIVE,
+    } as Consignment;
+
+    const saleEntity = {
+      id: 10,
+      status: SaleStatus.DRAFT,
+      documentationStatus: DocumentationStatus.PENDING,
+      transferStatus: TransferStatus.NOT_STARTED,
+      type: SaleType.SALE,
+    } as Sale;
+
+    const manager = {
+      findOne: jest.fn().mockImplementation((entity, options) => {
+        if (entity === Vehicle && options.where.id === 1) {
+          return Promise.resolve(availableVehicle);
+        }
+        if (entity === Client) {
+          return Promise.resolve(client);
+        }
+        if (entity === User) {
+          return Promise.resolve(user);
+        }
+        if (entity === TradeIn) {
+          return Promise.resolve(null);
+        }
+        if (entity === Consignment) {
+          return Promise.resolve(consignment);
+        }
+        return Promise.resolve(null);
+      }),
+      create: jest.fn().mockImplementation((entity, payload) => {
+        if (entity === Sale) {
+          return { ...saleEntity, ...payload };
+        }
+        return payload;
+      }),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+    };
+
+    dataSource.transaction.mockImplementation(async (callback) => callback(manager));
+    saleBalanceCalculatorServiceMock.calculate.mockReturnValue({
+      tradeInsTotal: 0,
+      paymentsTotal: 0,
+      pendingBalance: 100000,
+    });
+
+    await service.create({
+      clientId: 1,
+      vehicleId: 1,
+      userId: 1,
+      basePrice: 100000,
+      discount: 0,
+      transferPercentage: 0,
+      adminExpenses: 0,
+    } as any);
+
+    expect(availableVehicle.status).toBe(VehicleStatus.RESERVED);
+    expect(consignment.status).toBe(ConsignmentStatus.RESERVED);
+  });
+
   it('marca el vehiculo principal como vendido cuando un pago completa la venta', async () => {
     const vehicle = {
       id: 1,
@@ -209,6 +283,11 @@ describe('SalesService', () => {
       status: PaymentStatus.PENDING,
       sale,
     } as Payment;
+    const consignment = {
+      id: 4,
+      vehicleId: 1,
+      status: ConsignmentStatus.ACTIVE,
+    } as Consignment;
 
     const manager = {
       findOne: jest.fn().mockImplementation((entity) => {
@@ -217,6 +296,9 @@ describe('SalesService', () => {
         }
         if (entity === Sale) {
           return Promise.resolve(sale);
+        }
+        if (entity === Consignment) {
+          return Promise.resolve(consignment);
         }
         return Promise.resolve(null);
       }),
@@ -243,6 +325,7 @@ describe('SalesService', () => {
 
     expect(result.sale.status).toBe(SaleStatus.CONFIRMED);
     expect(vehicle.status).toBe(VehicleStatus.SOLD);
+    expect(consignment.status).toBe(ConsignmentStatus.SOLD);
   });
 
   it('bloquea confirmar un pago extra si la venta ya quedo cerrada', async () => {

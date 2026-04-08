@@ -10,6 +10,7 @@ import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Sale, SaleStatus } from '../sales/entities/sale.entity';
 import { SaleBalanceCalculatorService } from '../sales/sale-balance-calculator.service';
 import { VehicleStatus } from '../vehicles/entities/vehicle.entity';
+import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
 
 /**
  * PAYMENTS SERVICE - Gestión de pagos
@@ -107,6 +108,18 @@ export class PaymentsService {
         paidAt: resolvedStatus === PaymentStatus.CONFIRMED ? new Date() : null,
       });
       await queryRunner.manager.save(payment);
+
+      sale.payments = [...(sale.payments ?? []), payment];
+
+      if (resolvedStatus === PaymentStatus.CONFIRMED) {
+        await this.recalculateSaleTotalPaid(sale, queryRunner);
+        await this.syncVehicleStatusWithSale(sale, queryRunner);
+        await this.syncConsignmentStatusWithSale(sale, queryRunner);
+      } else if (sale.status === SaleStatus.DRAFT) {
+        sale.status = SaleStatus.PARTIALLY_PAID;
+      }
+
+      await queryRunner.manager.save(sale);
       await queryRunner.commitTransaction();
       return this.getPaymentById(payment.id);
     } catch (error) {
@@ -225,6 +238,7 @@ export class PaymentsService {
       await this.recalculateSaleTotalPaid(sale, queryRunner);
       // Reflejar inmediatamente si el vehículo pasa de reservado a vendido.
       await this.syncVehicleStatusWithSale(sale, queryRunner);
+      await this.syncConsignmentStatusWithSale(sale, queryRunner);
 
       await queryRunner.manager.save(payment);
       await queryRunner.manager.save(sale);
@@ -392,5 +406,29 @@ export class PaymentsService {
     sale.vehicle = saleWithVehicle.vehicle;
 
     await queryRunner.manager.save(saleWithVehicle.vehicle);
+  }
+
+  private async syncConsignmentStatusWithSale(
+    sale: Sale,
+    queryRunner: QueryRunner,
+  ): Promise<void> {
+    if (!sale.vehicle?.id || sale.status !== SaleStatus.CONFIRMED) {
+      return;
+    }
+
+    const consignment = await queryRunner.manager.findOne(Consignment, {
+      where: {
+        vehicleId: sale.vehicle.id,
+        status: ConsignmentStatus.ACTIVE,
+      },
+      order: { id: 'DESC' },
+    });
+
+    if (!consignment) {
+      return;
+    }
+
+    consignment.status = ConsignmentStatus.SOLD;
+    await queryRunner.manager.save(consignment);
   }
 }

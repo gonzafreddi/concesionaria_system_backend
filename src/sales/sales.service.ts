@@ -26,6 +26,7 @@ import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import { VehiclesService } from '../vehicles/vehicles.service';
 import { SaleAccountBalanceService } from './sale-account-balance.service';
 import { SaleBalanceCalculatorService } from './sale-balance-calculator.service';
+import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
 
 /**
  * SALES SERVICE - Lógica centralizada
@@ -257,6 +258,7 @@ export class SalesService {
           ? VehicleStatus.SOLD
           : VehicleStatus.RESERVED;
       await manager.save(vehicle);
+      await this.syncConsignmentStatusWithVehicleStatus(vehicle, manager);
 
       return sale;
     });
@@ -645,6 +647,10 @@ export class SalesService {
       saleWithTradeIns.status = this.calculateSaleStatus(saleWithTradeIns);
       // Cuando la venta queda cubierta, el vehículo principal debe quedar vendido.
       await this.syncPrimaryVehicleStatus(saleWithTradeIns, queryRunner.manager);
+      await this.syncConsignmentStatusWithSale(
+        saleWithTradeIns,
+        queryRunner.manager,
+      );
 
       await queryRunner.manager.save(payment);
       await queryRunner.manager.save(saleWithTradeIns);
@@ -696,6 +702,7 @@ export class SalesService {
       sale.transferStatus = TransferStatus.COMPLETED;
 
       await queryRunner.manager.save(vehicle);
+      await this.syncConsignmentStatusWithSale(sale, queryRunner.manager);
       await queryRunner.manager.save(sale);
 
       await queryRunner.commitTransaction();
@@ -772,6 +779,10 @@ export class SalesService {
 
       sale.vehicle.status = VehicleStatus.RESERVED;
       await queryRunner.manager.save(sale.vehicle);
+      await this.syncConsignmentStatusWithVehicleStatus(
+        sale.vehicle,
+        queryRunner.manager,
+      );
 
       const updated = await queryRunner.manager.save(sale);
 
@@ -806,5 +817,69 @@ export class SalesService {
         ? VehicleStatus.SOLD
         : VehicleStatus.RESERVED;
     await manager.save(sale.vehicle);
+  }
+
+  private async syncConsignmentStatusWithSale(
+    sale: Sale,
+    manager: {
+      findOne: (
+        entity: typeof Consignment,
+        options: Record<string, unknown>,
+      ) => Promise<Consignment | null>;
+      save: (entity: Consignment) => Promise<Consignment>;
+    },
+  ) {
+    if (!sale.vehicle?.id || sale.status !== SaleStatus.CONFIRMED) {
+      return;
+    }
+
+    const consignment = await manager.findOne(Consignment, {
+      where: {
+        vehicleId: sale.vehicle.id,
+        status: ConsignmentStatus.ACTIVE,
+      },
+      order: { id: 'DESC' },
+    });
+
+    if (!consignment) {
+      return;
+    }
+
+    consignment.status = ConsignmentStatus.SOLD;
+    await manager.save(consignment);
+  }
+
+  private async syncConsignmentStatusWithVehicleStatus(
+    vehicle: Vehicle,
+    manager: {
+      findOne: (
+        entity: typeof Consignment,
+        options: Record<string, unknown>,
+      ) => Promise<Consignment | null>;
+      save: (entity: Consignment) => Promise<Consignment>;
+    },
+  ) {
+    const consignment = await manager.findOne(Consignment, {
+      where: {
+        vehicleId: vehicle.id,
+        status: ConsignmentStatus.ACTIVE,
+      },
+      order: { id: 'DESC' },
+    });
+
+    if (!consignment) {
+      return;
+    }
+
+    if (vehicle.status === VehicleStatus.RESERVED) {
+      consignment.status = ConsignmentStatus.RESERVED;
+      await manager.save(consignment);
+      return;
+    }
+
+    if (vehicle.status === VehicleStatus.SOLD) {
+      consignment.status = ConsignmentStatus.SOLD;
+      await manager.save(consignment);
+    }
   }
 }

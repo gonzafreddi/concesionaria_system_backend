@@ -1,14 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
-  IsNotEmpty,
   IsEnum,
   IsNumber,
   IsOptional,
   IsInt,
   IsDateString,
 } from 'class-validator';
-import { VehicleType, VehicleStatus } from '../entities/vehicle.entity';
+import {
+  VehicleEntryType,
+  VehicleType,
+  VehicleStatus,
+} from '../entities/vehicle.entity';
 
 export class CreateVehicleDto {
   @ApiProperty({ enum: VehicleType })
@@ -50,6 +53,11 @@ export class CreateVehicleDto {
   @IsEnum(VehicleStatus)
   status?: VehicleStatus;
 
+  @ApiProperty({ enum: VehicleEntryType, required: false })
+  @IsOptional()
+  @IsEnum(VehicleEntryType)
+  entryType?: VehicleEntryType;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
@@ -74,7 +82,13 @@ export class CreateVehicleDto {
   @IsString()
   vehiclePlate: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
   @IsInt()
-  acquisitionTypeId: number;
+  ownerClientId?: number | null;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsInt()
+  acquisitionTypeId?: number;
 }

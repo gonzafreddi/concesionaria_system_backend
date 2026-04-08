@@ -10,6 +10,7 @@ import { Quote } from '../../quotes/entities/quote.entity';
 import { Sale } from '../../sales/entities/sale.entity';
 import { Inspection } from '../../inspections/entities/inspection.entity';
 import { Purchase } from '../../purchase/entities/purchase.entity';
+import { Consignment } from '../../consignment/entities/consignment.entity';
 
 @Entity('clients')
 export class Client {
@@ -63,4 +64,7 @@ export class Client {
 
   @OneToMany(() => Purchase, (purchase) => purchase.client)
   purchases: Purchase[];
+
+  @OneToMany(() => Consignment, (consignment) => consignment.ownerClient)
+  consignments: Consignment[];
 }

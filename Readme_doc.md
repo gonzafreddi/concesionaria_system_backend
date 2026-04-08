@@ -165,6 +165,39 @@ Por ejemplo Compra directa , permuta , consignacion
 * active : Si esta activa 
 * vehicles: la asociacion a los vehiculos
 
+---
+
+## 📄 Consignments
+
+Registro operativo de vehículos recibidos en consignación. Esta entidad orquesta:
+
+* el vehículo consignado
+* el cliente dueño del vehículo
+* el precio de toma acordado
+* el precio estimado de venta
+* el estado de la consignación
+
+**Campos:**
+
+* id: identificador único
+* vehicle_id: vehículo consignado
+* owner_client_id: cliente dueño del vehículo
+* take_price: precio de toma acordado con el dueño
+* estimated_sale_price: precio estimado de venta al público
+* status: estado (ACTIVE | RESERVED | SOLD | RETURNED | CANCELLED)
+* notes: observaciones comerciales o administrativas
+* created_at: fecha de alta
+* updated_at: última actualización
+
+**Reglas:**
+
+* al crear una consignación, el vehículo pasa a `entryType = CONSIGNMENT`
+* el vehículo sincroniza `ownerClientId` con el dueño de la consignación
+* el `estimated_sale_price` no puede ser menor al `take_price`
+* un vehículo no puede tener dos consignaciones activas al mismo tiempo
+* cuando se crea una venta del vehículo consignado y este queda reservado, la consignación pasa a `RESERVED`
+* cuando la venta queda confirmada, la consignación pasa a `SOLD`
+
 ## 🛠️ Tecnologías objetivo
 
 * Backend: NestJS

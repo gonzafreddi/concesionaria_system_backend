@@ -9,6 +9,7 @@ describe('VehiclesController', () => {
     create: jest.fn(),
     findAll: jest.fn(),
     getVehicleForSale: jest.fn(),
+    getVehiclesAvailableForPurchase: jest.fn(),
     getPendingInspectionVehicles: jest.fn(),
     findOne: jest.fn(),
     update: jest.fn(),
@@ -45,6 +46,19 @@ describe('VehiclesController', () => {
       { id: 1, brand: 'Toyota' },
     ]);
     expect(vehiclesServiceMock.getVehicleForSale).toHaveBeenCalled();
+  });
+
+  it('expone un endpoint dedicado para vehiculos disponibles para compra', async () => {
+    vehiclesServiceMock.getVehiclesAvailableForPurchase.mockResolvedValue([
+      { id: 2, vehiclePlate: 'AB123CD' },
+    ]);
+
+    await expect(controller.getAvailableForPurchaseVehicles()).resolves.toEqual([
+      { id: 2, vehiclePlate: 'AB123CD' },
+    ]);
+    expect(
+      vehiclesServiceMock.getVehiclesAvailableForPurchase,
+    ).toHaveBeenCalled();
   });
 
   it('expone purchaseDate en el detalle del vehiculo', async () => {

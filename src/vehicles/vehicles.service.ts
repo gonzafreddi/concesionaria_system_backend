@@ -116,6 +116,27 @@ export class VehiclesService {
     }));
   }
 
+  async getVehiclesAvailableForPurchase(): Promise<VehicleSaleOptionDto[]> {
+    const vehicles = await this.vehiclesRepository.find({
+      relations: ['purchases'],
+      order: { id: 'DESC' },
+    });
+
+    return vehicles
+      .filter((vehicle) => !vehicle.purchases?.length)
+      .map((vehicle) => ({
+        id: vehicle.id,
+        type: vehicle.type,
+        brand: vehicle.brand,
+        model: vehicle.model,
+        year: vehicle.year,
+        color: vehicle.color,
+        vehiclePlate: vehicle.vehiclePlate,
+        price: Number(vehicle.price),
+        status: vehicle.status,
+      }));
+  }
+
   async getPendingInspectionVehicles() {
     return this.vehiclesRepository.find({
       where: {

@@ -99,4 +99,53 @@ describe('VehiclesService', () => {
     });
     expect(result.purchaseDate).toBe('2026-03-24T15:30:00.000Z');
   });
+
+  it('lista solo los vehiculos disponibles para compra cuando no tienen compras asociadas', async () => {
+    repositoryMock.find.mockResolvedValue([
+      {
+        id: 9,
+        type: VehicleType.USED,
+        brand: 'Toyota',
+        model: 'Etios',
+        year: 2022,
+        color: 'Rojo',
+        vehiclePlate: 'AB123CD',
+        price: '14350000',
+        status: VehicleStatus.PENDING_INSPECTION,
+        purchases: [],
+      },
+      {
+        id: 10,
+        type: VehicleType.USED,
+        brand: 'Ford',
+        model: 'Ka',
+        year: 2019,
+        color: 'Azul',
+        vehiclePlate: 'AC456EF',
+        price: '11900000',
+        status: VehicleStatus.AVAILABLE,
+        purchases: [{ id: 4 }],
+      },
+    ]);
+
+    const result = await service.getVehiclesAvailableForPurchase();
+
+    expect(repositoryMock.find).toHaveBeenCalledWith({
+      relations: ['purchases'],
+      order: { id: 'DESC' },
+    });
+    expect(result).toEqual([
+      {
+        id: 9,
+        type: VehicleType.USED,
+        brand: 'Toyota',
+        model: 'Etios',
+        year: 2022,
+        color: 'Rojo',
+        vehiclePlate: 'AB123CD',
+        price: 14350000,
+        status: VehicleStatus.PENDING_INSPECTION,
+      },
+    ]);
+  });
 });

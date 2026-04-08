@@ -43,6 +43,20 @@ export class VehiclesController {
     return this.vehiclesService.getVehicleForSale();
   }
 
+  @ApiOperation({
+    summary: 'Listar vehículos disponibles para registrar una compra',
+  })
+  @ApiOkResponse({
+    description:
+      'Retorna vehículos que todavía no fueron comprados por la concesionaria',
+    type: VehicleSaleOptionDto,
+    isArray: true,
+  })
+  @Get('available-for-purchase')
+  getAvailableForPurchaseVehicles() {
+    return this.vehiclesService.getVehiclesAvailableForPurchase();
+  }
+
   @ApiOperation({ summary: 'Get vehicles pending inspection' })
   @Get('pending-inspection')
   getPendingInspectionVehicles() {

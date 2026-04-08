@@ -25,6 +25,26 @@ export class PurchaseService {
     private readonly documentRepository: Repository<Document>,
   ) {}
 
+  private async findPurchaseByVehiclePlate(
+    vehiclePlate: string,
+    excludedPurchaseId?: number,
+  ): Promise<Purchase | null> {
+    const query = this.purchaseRepository
+      .createQueryBuilder('purchase')
+      .innerJoinAndSelect('purchase.vehicle', 'vehicle')
+      .where('LOWER(vehicle.vehiclePlate) = LOWER(:vehiclePlate)', {
+        vehiclePlate,
+      });
+
+    if (excludedPurchaseId !== undefined) {
+      query.andWhere('purchase.id != :excludedPurchaseId', {
+        excludedPurchaseId,
+      });
+    }
+
+    return query.getOne();
+  }
+
   /**
    * Crea una compra validando que cliente y vehículo existan
    * y que el vehículo no esté ya asociado a otra compra.
@@ -50,13 +70,13 @@ export class PurchaseService {
       );
     }
 
-    const existingPurchase = await this.purchaseRepository.findOne({
-      where: { vehicleId: createPurchaseDto.vehicleId },
-    });
+    const existingPurchase = await this.findPurchaseByVehiclePlate(
+      vehicle.vehiclePlate,
+    );
 
     if (existingPurchase) {
       throw new BadRequestException(
-        `El vehículo ${createPurchaseDto.vehicleId} ya está asociado a la compra ${existingPurchase.id}`,
+        `El vehículo con patente ${vehicle.vehiclePlate} ya está asociado a la compra ${existingPurchase.id}`,
       );
     }
 
@@ -155,13 +175,14 @@ export class PurchaseService {
         );
       }
 
-      const existingPurchase = await this.purchaseRepository.findOne({
-        where: { vehicleId: updatePurchaseDto.vehicleId },
-      });
+      const existingPurchase = await this.findPurchaseByVehiclePlate(
+        vehicle.vehiclePlate,
+        id,
+      );
 
-      if (existingPurchase && existingPurchase.id !== id) {
+      if (existingPurchase) {
         throw new BadRequestException(
-          `El vehículo ${updatePurchaseDto.vehicleId} ya pertenece a otra compra`,
+          `El vehículo con patente ${vehicle.vehiclePlate} ya pertenece a otra compra`,
         );
       }
 

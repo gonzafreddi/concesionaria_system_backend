@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { UpdateSaleDto } from './dto/update-sale.dto';
 import { CreateTradeInDto } from './dto/create-trade-in.dto';
@@ -351,6 +351,10 @@ export class SalesService {
       if (sale.vehicle?.status === VehicleStatus.RESERVED) {
         sale.vehicle.status = VehicleStatus.AVAILABLE;
         await this.vehicleRepository.save(sale.vehicle);
+        await this.syncConsignmentStatusWithVehicleStatus(
+          sale.vehicle,
+          this.salesRepository.manager,
+        );
       }
     }
 
@@ -393,14 +397,44 @@ export class SalesService {
    * DELETE - Elimina solo si está en DRAFT
    */
   async remove(id: number) {
-    const sale = await this.findOne(id);
-    if (sale.status !== SaleStatus.DRAFT) {
-      throw new BadRequestException(
-        'Solo se pueden eliminar operaciones en estado DRAFT',
-      );
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const sale = await queryRunner.manager.findOne(Sale, {
+        where: { id },
+        relations: ['vehicle'],
+      });
+
+      if (!sale) {
+        throw new NotFoundException(`Operación ${id} no encontrada`);
+      }
+
+      if (sale.status !== SaleStatus.DRAFT) {
+        throw new BadRequestException(
+          'Solo se pueden eliminar operaciones en estado DRAFT',
+        );
+      }
+
+      if (sale.vehicle) {
+        sale.vehicle.status = VehicleStatus.AVAILABLE;
+        await queryRunner.manager.save(sale.vehicle);
+        await this.syncConsignmentStatusWithVehicleStatus(
+          sale.vehicle,
+          queryRunner.manager,
+        );
+      }
+
+      await queryRunner.manager.remove(sale);
+      await queryRunner.commitTransaction();
+      return { deleted: true };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-    await this.salesRepository.remove(sale);
-    return { deleted: true };
   }
 
   /**
@@ -647,8 +681,8 @@ export class SalesService {
       saleWithTradeIns.status = this.calculateSaleStatus(saleWithTradeIns);
       // Cuando la venta queda cubierta, el vehículo principal debe quedar vendido.
       await this.syncPrimaryVehicleStatus(saleWithTradeIns, queryRunner.manager);
-      await this.syncConsignmentStatusWithSale(
-        saleWithTradeIns,
+      await this.syncConsignmentStatusWithVehicleStatus(
+        saleWithTradeIns.vehicle,
         queryRunner.manager,
       );
 
@@ -702,7 +736,10 @@ export class SalesService {
       sale.transferStatus = TransferStatus.COMPLETED;
 
       await queryRunner.manager.save(vehicle);
-      await this.syncConsignmentStatusWithSale(sale, queryRunner.manager);
+      await this.syncConsignmentStatusWithVehicleStatus(
+        vehicle,
+        queryRunner.manager,
+      );
       await queryRunner.manager.save(sale);
 
       await queryRunner.commitTransaction();
@@ -819,36 +856,6 @@ export class SalesService {
     await manager.save(sale.vehicle);
   }
 
-  private async syncConsignmentStatusWithSale(
-    sale: Sale,
-    manager: {
-      findOne: (
-        entity: typeof Consignment,
-        options: Record<string, unknown>,
-      ) => Promise<Consignment | null>;
-      save: (entity: Consignment) => Promise<Consignment>;
-    },
-  ) {
-    if (!sale.vehicle?.id || sale.status !== SaleStatus.CONFIRMED) {
-      return;
-    }
-
-    const consignment = await manager.findOne(Consignment, {
-      where: {
-        vehicleId: sale.vehicle.id,
-        status: ConsignmentStatus.ACTIVE,
-      },
-      order: { id: 'DESC' },
-    });
-
-    if (!consignment) {
-      return;
-    }
-
-    consignment.status = ConsignmentStatus.SOLD;
-    await manager.save(consignment);
-  }
-
   private async syncConsignmentStatusWithVehicleStatus(
     vehicle: Vehicle,
     manager: {
@@ -862,7 +869,11 @@ export class SalesService {
     const consignment = await manager.findOne(Consignment, {
       where: {
         vehicleId: vehicle.id,
-        status: ConsignmentStatus.ACTIVE,
+        status: In([
+          ConsignmentStatus.ACTIVE,
+          ConsignmentStatus.RESERVED,
+          ConsignmentStatus.SOLD,
+        ]),
       },
       order: { id: 'DESC' },
     });
@@ -873,6 +884,12 @@ export class SalesService {
 
     if (vehicle.status === VehicleStatus.RESERVED) {
       consignment.status = ConsignmentStatus.RESERVED;
+      await manager.save(consignment);
+      return;
+    }
+
+    if (vehicle.status === VehicleStatus.AVAILABLE) {
+      consignment.status = ConsignmentStatus.ACTIVE;
       await manager.save(consignment);
       return;
     }

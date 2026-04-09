@@ -6,6 +6,7 @@ import { Sale } from '../sales/entities/sale.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { Payment } from '../payments/entities/payment.entity';
 import { Client } from '../clients/entities/client.entity';
+import { Purchase } from '../purchase/entities/purchase.entity';
 
 describe('DocumentsService', () => {
   let service: DocumentsService;
@@ -16,6 +17,7 @@ describe('DocumentsService', () => {
         DocumentsService,
         { provide: getRepositoryToken(Document), useValue: {} },
         { provide: getRepositoryToken(Sale), useValue: {} },
+        { provide: getRepositoryToken(Purchase), useValue: {} },
         { provide: getRepositoryToken(Vehicle), useValue: {} },
         { provide: getRepositoryToken(Payment), useValue: {} },
         { provide: getRepositoryToken(Client), useValue: {} },

@@ -6,6 +6,7 @@ import { Purchase, PurchaseStatus } from './entities/purchase.entity';
 import { Client } from '../clients/entities/client.entity';
 import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
 import { Document } from '../documents/entities/document.entity';
+import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
 
 describe('PurchaseService', () => {
   let service: PurchaseService;
@@ -13,6 +14,7 @@ describe('PurchaseService', () => {
   let clientRepository: any;
   let vehicleRepository: any;
   let documentRepository: any;
+  let consignmentRepository: any;
 
   const createQueryBuilderMock = () => {
     const builder = {
@@ -48,6 +50,10 @@ describe('PurchaseService', () => {
       count: jest.fn(),
     };
 
+    consignmentRepository = {
+      findOne: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PurchaseService,
@@ -66,6 +72,10 @@ describe('PurchaseService', () => {
         {
           provide: getRepositoryToken(Document),
           useValue: documentRepository,
+        },
+        {
+          provide: getRepositoryToken(Consignment),
+          useValue: consignmentRepository,
         },
       ],
     }).compile();
@@ -112,6 +122,7 @@ describe('PurchaseService', () => {
     const purchaseByPlateQuery = createQueryBuilderMock();
     purchaseByPlateQuery.getOne.mockResolvedValue(null);
     purchaseRepository.createQueryBuilder.mockReturnValue(purchaseByPlateQuery);
+    consignmentRepository.findOne.mockResolvedValue(null);
 
     clientRepository.findOne.mockResolvedValue({ id: 3 });
     vehicleRepository.findOne.mockResolvedValue({
@@ -163,5 +174,31 @@ describe('PurchaseService', () => {
         agreedPrice: 1000,
       }),
     ).rejects.toThrow(new NotFoundException('Vehículo 999 no encontrado'));
+  });
+
+  it('rechaza una compra directa si el vehiculo tiene una consignacion activa', async () => {
+    clientRepository.findOne.mockResolvedValue({ id: 1 });
+    vehicleRepository.findOne.mockResolvedValue({
+      id: 44,
+      vehiclePlate: 'AC123ZZ',
+      status: VehicleStatus.AVAILABLE,
+    });
+    consignmentRepository.findOne.mockResolvedValue({
+      id: 8,
+      vehicleId: 44,
+      status: ConsignmentStatus.ACTIVE,
+    });
+
+    await expect(
+      service.create({
+        clientId: 1,
+        vehicleId: 44,
+        agreedPrice: 12000000,
+      }),
+    ).rejects.toThrow(
+      new BadRequestException(
+        'El vehículo 44 tiene una consignación activa y no puede registrarse como compra directa',
+      ),
+    );
   });
 });

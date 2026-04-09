@@ -6,9 +6,18 @@ import { Purchase } from './entities/purchase.entity';
 import { Client } from '../clients/entities/client.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { Document } from '../documents/entities/document.entity';
+import { Consignment } from '../consignment/entities/consignment.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Purchase, Client, Vehicle, Document])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Purchase,
+      Client,
+      Vehicle,
+      Document,
+      Consignment,
+    ]),
+  ],
   controllers: [PurchaseController],
   providers: [PurchaseService],
 })

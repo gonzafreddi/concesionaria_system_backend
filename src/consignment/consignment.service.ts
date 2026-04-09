@@ -29,6 +29,23 @@ export class ConsignmentService {
     private readonly clientRepository: Repository<Client>,
   ) {}
 
+  private ensureConsignmentIsMutable(
+    consignment: Consignment,
+    action: 'actualizar' | 'eliminar',
+  ) {
+    if (consignment.status === ConsignmentStatus.SOLD) {
+      throw new BadRequestException(
+        `No se puede ${action} una consignación vendida`,
+      );
+    }
+
+    if (consignment.status === ConsignmentStatus.RESERVED) {
+      throw new BadRequestException(
+        `No se puede ${action} una consignación reservada por una venta en curso`,
+      );
+    }
+  }
+
   private async getVehicle(vehicleId: number): Promise<Vehicle> {
     const vehicle = await this.vehicleRepository.findOne({
       where: { id: vehicleId },
@@ -156,6 +173,7 @@ export class ConsignmentService {
     updateConsignmentDto: UpdateConsignmentDto,
   ): Promise<Consignment> {
     const consignment = await this.findOne(id);
+    this.ensureConsignmentIsMutable(consignment, 'actualizar');
 
     const nextVehicleId = updateConsignmentDto.vehicleId ?? consignment.vehicleId;
     const nextOwnerClientId =
@@ -192,6 +210,7 @@ export class ConsignmentService {
 
   async remove(id: number): Promise<{ deleted: true }> {
     const consignment = await this.findOne(id);
+    this.ensureConsignmentIsMutable(consignment, 'eliminar');
     await this.consignmentRepository.remove(consignment);
     return { deleted: true };
   }

@@ -34,6 +34,10 @@ describe('SalesService', () => {
     create: jest.fn(),
     remove: jest.fn(),
     delete: jest.fn(),
+    manager: {
+      findOne: jest.fn(),
+      save: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -375,5 +379,35 @@ describe('SalesService', () => {
         'No se pueden confirmar pagos de una operación cerrada',
       ),
     );
+  });
+
+  it('reactiva la consignacion al cancelar una venta reservada', async () => {
+    const vehicle = {
+      id: 1,
+      status: VehicleStatus.RESERVED,
+    } as Vehicle;
+    const sale = {
+      id: 33,
+      status: SaleStatus.DRAFT,
+      vehicle,
+    } as Sale;
+    const consignment = {
+      id: 4,
+      vehicleId: 1,
+      status: ConsignmentStatus.RESERVED,
+    } as Consignment;
+
+    jest.spyOn(service, 'findOne').mockResolvedValue(sale as any);
+    repositoryMock.manager.findOne.mockResolvedValue(consignment);
+    repositoryMock.manager.save.mockImplementation(async (entity) => entity);
+    repositoryMock.save.mockImplementation(async (entity) => entity);
+
+    const result = await service.updateWorkflowStatus(33, {
+      status: SaleStatus.CANCELLED,
+    });
+
+    expect(result.status).toBe(SaleStatus.CANCELLED);
+    expect(vehicle.status).toBe(VehicleStatus.AVAILABLE);
+    expect(consignment.status).toBe(ConsignmentStatus.ACTIVE);
   });
 });

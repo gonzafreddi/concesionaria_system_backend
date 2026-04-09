@@ -342,4 +342,75 @@ describe('PaymentsService', () => {
       ),
     );
   });
+
+  it('reactiva la consignacion cuando se rechaza un pago confirmado y la venta vuelve a reservada', async () => {
+    const vehicle = {
+      id: 99,
+      status: VehicleStatus.SOLD,
+    } as Vehicle;
+    const sale = {
+      id: 17,
+      status: SaleStatus.CONFIRMED,
+      totalPaid: 12000,
+      finalPrice: 12000,
+      vehicle,
+    } as Sale;
+    const payment = {
+      id: 200,
+      sale,
+      amount: 12000,
+      status: PaymentStatus.CONFIRMED,
+      currency: Currency.ARS,
+    } as Payment;
+    const consignment = {
+      id: 12,
+      vehicleId: 99,
+      status: ConsignmentStatus.SOLD,
+    } as Consignment;
+
+    const manager = {
+      findOne: jest.fn().mockImplementation((entity) => {
+        if (entity === Payment) {
+          return Promise.resolve(payment);
+        }
+        if (entity === Sale) {
+          return Promise.resolve({
+            ...sale,
+            tradeIns: [],
+            vehicle,
+          });
+        }
+        if (entity === Consignment) {
+          return Promise.resolve(consignment);
+        }
+        return Promise.resolve(null);
+      }),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+      find: jest
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ ...payment, status: PaymentStatus.REJECTED }]),
+    };
+
+    const queryRunner = {
+      manager,
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+    };
+
+    dataSourceMock.createQueryRunner.mockReturnValue(queryRunner);
+    saleBalanceCalculatorServiceMock.calculate.mockReturnValue({
+      tradeInsTotal: 0,
+      paymentsTotal: 0,
+      pendingBalance: 12000,
+    });
+
+    await service.rejectPayment(200);
+
+    expect(vehicle.status).toBe(VehicleStatus.RESERVED);
+    expect(consignment.status).toBe(ConsignmentStatus.RESERVED);
+  });
 });

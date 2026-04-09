@@ -4,12 +4,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, QueryRunner } from 'typeorm';
+import { Repository, DataSource, QueryRunner, In } from 'typeorm';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { Sale, SaleStatus } from '../sales/entities/sale.entity';
 import { SaleBalanceCalculatorService } from '../sales/sale-balance-calculator.service';
-import { VehicleStatus } from '../vehicles/entities/vehicle.entity';
+import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
 import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
 
 /**
@@ -290,6 +290,10 @@ export class PaymentsService {
         await this.recalculateSaleTotalPaid(sale, queryRunner);
         // Si se rechaza un pago confirmado, el vehículo vuelve al estado coherente.
         await this.syncVehicleStatusWithSale(sale, queryRunner);
+        await this.syncConsignmentStatusWithVehicleStatus(
+          sale.vehicle,
+          queryRunner,
+        );
         await queryRunner.manager.save(sale);
       }
 
@@ -419,7 +423,7 @@ export class PaymentsService {
     const consignment = await queryRunner.manager.findOne(Consignment, {
       where: {
         vehicleId: sale.vehicle.id,
-        status: ConsignmentStatus.ACTIVE,
+        status: In([ConsignmentStatus.ACTIVE, ConsignmentStatus.RESERVED]),
       },
       order: { id: 'DESC' },
     });
@@ -430,5 +434,41 @@ export class PaymentsService {
 
     consignment.status = ConsignmentStatus.SOLD;
     await queryRunner.manager.save(consignment);
+  }
+
+  private async syncConsignmentStatusWithVehicleStatus(
+    vehicle: Vehicle | undefined,
+    queryRunner: QueryRunner,
+  ): Promise<void> {
+    if (!vehicle?.id) {
+      return;
+    }
+
+    const consignment = await queryRunner.manager.findOne(Consignment, {
+      where: {
+        vehicleId: vehicle.id,
+        status: In([
+          ConsignmentStatus.ACTIVE,
+          ConsignmentStatus.RESERVED,
+          ConsignmentStatus.SOLD,
+        ]),
+      },
+      order: { id: 'DESC' },
+    });
+
+    if (!consignment) {
+      return;
+    }
+
+    if (vehicle.status === VehicleStatus.AVAILABLE) {
+      consignment.status = ConsignmentStatus.ACTIVE;
+      await queryRunner.manager.save(consignment);
+      return;
+    }
+
+    if (vehicle.status === VehicleStatus.RESERVED) {
+      consignment.status = ConsignmentStatus.RESERVED;
+      await queryRunner.manager.save(consignment);
+    }
   }
 }

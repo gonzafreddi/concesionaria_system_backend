@@ -160,4 +160,42 @@ describe('ConsignmentService', () => {
       ),
     );
   });
+
+  it('bloquea actualizar una consignacion vendida', async () => {
+    jest.spyOn(service, 'findOne').mockResolvedValue({
+      id: 7,
+      vehicleId: 8,
+      ownerClientId: 20,
+      takePrice: 10,
+      estimatedSalePrice: 12,
+      status: ConsignmentStatus.SOLD,
+      notes: null,
+    } as Consignment);
+
+    await expect(
+      service.update(7, { notes: 'cambio no permitido' }),
+    ).rejects.toThrow(
+      new BadRequestException(
+        'No se puede actualizar una consignación vendida',
+      ),
+    );
+  });
+
+  it('bloquea eliminar una consignacion reservada', async () => {
+    jest.spyOn(service, 'findOne').mockResolvedValue({
+      id: 9,
+      vehicleId: 8,
+      ownerClientId: 20,
+      takePrice: 10,
+      estimatedSalePrice: 12,
+      status: ConsignmentStatus.RESERVED,
+      notes: null,
+    } as Consignment);
+
+    await expect(service.remove(9)).rejects.toThrow(
+      new BadRequestException(
+        'No se puede eliminar una consignación reservada por una venta en curso',
+      ),
+    );
+  });
 });

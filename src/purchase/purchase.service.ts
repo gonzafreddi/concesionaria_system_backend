@@ -4,13 +4,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
 import { Purchase, PurchaseStatus } from './entities/purchase.entity';
 import { Client } from '../clients/entities/client.entity';
 import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
 import { Document } from '../documents/entities/document.entity';
+import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
 
 @Injectable()
 export class PurchaseService {
@@ -23,7 +24,25 @@ export class PurchaseService {
     private readonly vehicleRepository: Repository<Vehicle>,
     @InjectRepository(Document)
     private readonly documentRepository: Repository<Document>,
+    @InjectRepository(Consignment)
+    private readonly consignmentRepository: Repository<Consignment>,
   ) {}
+
+  private async ensureVehicleNotConsigned(vehicleId: number): Promise<void> {
+    const activeConsignment = await this.consignmentRepository.findOne({
+      where: {
+        vehicleId,
+        status: In([ConsignmentStatus.ACTIVE, ConsignmentStatus.RESERVED]),
+      },
+      order: { id: 'DESC' },
+    });
+
+    if (activeConsignment) {
+      throw new BadRequestException(
+        `El vehículo ${vehicleId} tiene una consignación activa y no puede registrarse como compra directa`,
+      );
+    }
+  }
 
   private async findPurchaseByVehiclePlate(
     vehiclePlate: string,
@@ -69,6 +88,8 @@ export class PurchaseService {
         `Vehículo ${createPurchaseDto.vehicleId} no encontrado`,
       );
     }
+
+    await this.ensureVehicleNotConsigned(vehicle.id);
 
     const existingPurchase = await this.findPurchaseByVehiclePlate(
       vehicle.vehiclePlate,
@@ -174,6 +195,8 @@ export class PurchaseService {
           `Vehículo ${updatePurchaseDto.vehicleId} no encontrado`,
         );
       }
+
+      await this.ensureVehicleNotConsigned(vehicle.id);
 
       const existingPurchase = await this.findPurchaseByVehiclePlate(
         vehicle.vehiclePlate,

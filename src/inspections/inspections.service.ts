@@ -8,10 +8,10 @@ import { Repository } from 'typeorm';
 import { CreateInspectionDto } from './dto/create-inspection.dto';
 import { UpdateInspectionDto } from './dto/update-inspection.dto';
 import { Inspection } from './entities/inspection.entity';
-import { Client } from 'src/clients/entities/client.entity';
-import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
-import { VehicleStatus } from 'src/vehicles/entities/vehicle.entity';
-import { VehiclesService } from 'src/vehicles/vehicles.service';
+import { Client } from '../clients/entities/client.entity';
+import { Vehicle } from '../vehicles/entities/vehicle.entity';
+import { VehicleStatus } from '../vehicles/entities/vehicle.entity';
+import { VehiclesService } from '../vehicles/vehicles.service';
 
 @Injectable()
 export class InspectionsService {

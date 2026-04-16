@@ -5,7 +5,7 @@ import { PreSaleBodyworkService } from './pre-sale-bodywork.service';
 import { PreSaleAestheticService } from './pre-sale-aesthetic.service';
 import { PreSaleDocumentationService } from './pre-sale-documentation.service';
 import { PreSaleMechanicalService } from './pre-sale-mechanical.service';
-import { VehiclesService } from 'src/vehicles/vehicles.service';
+import { VehiclesService } from '../vehicles/vehicles.service';
 @Injectable()
 export class PreSaleService {
   constructor(

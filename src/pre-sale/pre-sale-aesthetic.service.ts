@@ -5,9 +5,9 @@ import { UpdatePreSaleAestheticDto } from './dto/update-pre-sale-aesthetic.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PreSaleAesthetic } from './entities/pre_sale_aesthetic.entity';
-import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
+import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { PreSaleStatus } from './entities/pre-sale-status.enum';
-import { VehiclesService } from 'src/vehicles/vehicles.service';
+import { VehiclesService } from '../vehicles/vehicles.service';
 
 @Injectable()
 export class PreSaleAestheticService {

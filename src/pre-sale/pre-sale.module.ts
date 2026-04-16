@@ -15,7 +15,7 @@ import { PreSaleMechanical } from './entities/pre_sale_mechanical.entity';
 import { PreSaleAesthetic } from './entities/pre_sale_aesthetic.entity';
 import { PreSaleBodywork } from './entities/pre_sale_bodywork.entity';
 import { VehiclesModule } from '../vehicles/vehicles.module';
-import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
+import { Vehicle } from '../vehicles/entities/vehicle.entity';
 
 @Module({
   imports: [

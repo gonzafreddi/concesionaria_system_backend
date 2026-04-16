@@ -5,7 +5,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { encryptPassword } from '../utils/encrypt';
-import { httpResponseType } from 'src/types/http/response,type';
+import { httpResponseType } from '../types/http/response,type';
 
 @Injectable()
 export class UsersService {

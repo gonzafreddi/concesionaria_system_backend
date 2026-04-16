@@ -3,11 +3,11 @@ import { ApiTags } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Roles } from 'src/auth/decorators/roles.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from './entities/user.entity';
 
 @ApiTags('users')
-@Roles(UserRole.ADMIN)
+//@Roles(UserRole.ADMIN)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

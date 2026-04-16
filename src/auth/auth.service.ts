@@ -1,9 +1,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
-import { comparePassword } from 'src/utils/encrypt';
-import { httpResponseType } from 'src/types/http/response,type';
+import { comparePassword } from '../utils/encrypt';
+import { httpResponseType } from '../types/http/response,type';
 
 const response: httpResponseType = {
   statusCode: 0,

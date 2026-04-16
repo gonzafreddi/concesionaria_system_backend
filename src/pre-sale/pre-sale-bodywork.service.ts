@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PreSaleBodywork } from './entities/pre_sale_bodywork.entity';
-import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
+import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { CreatePreSaleBodyworkDto } from './dto/create-pre-sale-bodywork.dto';
 import { UpdatePreSaleBodyworkDto } from './dto/update-pre-sale-bodywork.dto';
 import { PreSaleStatus } from './entities/pre-sale-status.enum';

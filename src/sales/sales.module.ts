@@ -9,7 +9,7 @@ import { Client } from '../clients/entities/client.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { User } from '../users/entities/user.entity';
 import { Payment } from '../payments/entities/payment.entity';
-import { VehiclesModule } from 'src/vehicles/vehicles.module';
+import { VehiclesModule } from '../vehicles/vehicles.module';
 import { SaleAccountBalanceService } from './sale-account-balance.service';
 import { SaleBalanceCalculatorService } from './sale-balance-calculator.service';
 

@@ -7,7 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { ROLES_KEY } from './decorators/roles.decorator';
-import { UserRole } from 'src/users/entities/user.entity';
+import { UserRole } from '../users/entities/user.entity';
 
 type AuthenticatedRequest = Request & {
   user?: {

@@ -2,11 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PreSaleMechanical } from './entities/pre_sale_mechanical.entity';
-import { Vehicle } from 'src/vehicles/entities/vehicle.entity';
+import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { CreatePreSaleMechanicalDto } from './dto/create-pre-sale-mechanical.dto';
 import { UpdatePreSaleMechanicalDto } from './dto/update-pre-sale-mechanical.dto';
 import { PreSaleStatus } from './entities/pre-sale-status.enum';
-import { VehiclesService } from 'src/vehicles/vehicles.service';
+import { VehiclesService } from '../vehicles/vehicles.service';
 
 @Injectable()
 export class PreSaleMechanicalService {

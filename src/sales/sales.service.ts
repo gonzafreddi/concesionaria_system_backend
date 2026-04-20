@@ -19,7 +19,11 @@ import {
 import { TradeIn } from './entities/trade-in.entity';
 import { Quote } from '../quotes/entities/quote.entity';
 import { Client } from '../clients/entities/client.entity';
-import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
+import {
+  Vehicle,
+  VehicleEntryType,
+  VehicleStatus,
+} from '../vehicles/entities/vehicle.entity';
 import { User } from '../users/entities/user.entity';
 import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
@@ -245,6 +249,7 @@ export class SalesService {
 
         // Respetar el estado previo del vehículo recibido como parte de pago.
         // Solo se asigna INSPECTION si no tiene un estado definido.
+        tradeInVehicle.entryType = VehicleEntryType.TRADE_IN;
         if (!tradeInVehicle.status) {
           tradeInVehicle.status = VehicleStatus.INSPECTION;
         }
@@ -589,6 +594,7 @@ export class SalesService {
       // El finalPrice no cambia; recalculamos solo el estado financiero
       sale.tradeIns = [...sale.tradeIns, tradeIn];
       sale.status = this.calculateSaleStatus(sale);
+      vehicle.entryType = VehicleEntryType.TRADE_IN;
       vehicle.status = VehicleStatus.INSPECTION;
       await queryRunner.manager.save(vehicle);
       // Mantener sincronizado el estado del vehículo principal con el cierre financiero.

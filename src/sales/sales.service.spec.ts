@@ -12,7 +12,9 @@ import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { Quote } from '../quotes/entities/quote.entity';
 import { User } from '../users/entities/user.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
-import { VehicleStatus } from '../vehicles/entities/vehicle.entity';
+import {  VehicleEntryType,
+  VehicleStatus,
+} from '../vehicles/entities/vehicle.entity';
 import { VehiclesService } from '../vehicles/vehicles.service';
 import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
 import { SaleAccountBalanceService } from './sale-account-balance.service';
@@ -193,7 +195,7 @@ describe('SalesService', () => {
     } as any);
 
     expect(tradeInVehicle.status).toBe(VehicleStatus.PRESALE);
-  });
+    expect(tradeInVehicle.entryType).toBe(VehicleEntryType.TRADE_IN);  });
 
   it('marca la consignacion como RESERVED cuando se crea una venta para un vehiculo consignado', async () => {
     const availableVehicle = {

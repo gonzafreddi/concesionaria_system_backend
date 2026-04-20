@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   VehicleEntryType,
   VehicleStatus,
@@ -29,6 +29,15 @@ export class VehicleSaleOptionDto {
 
   @ApiProperty({ example: 24500000 })
   price: number;
+
+  @ApiPropertyOptional({ example: 87500, nullable: true })
+  mileage: number | null;
+
+  @ApiPropertyOptional({
+    example: 'Motor 1.6, caja manual, 6 airbags, ABS.',
+    nullable: true,
+  })
+  technicalSpecifications: string | null;
 
   @ApiProperty({ enum: VehicleStatus, example: VehicleStatus.AVAILABLE })
   status: VehicleStatus;

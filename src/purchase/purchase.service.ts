@@ -9,7 +9,11 @@ import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
 import { Purchase, PurchaseStatus } from './entities/purchase.entity';
 import { Client } from '../clients/entities/client.entity';
-import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
+import {
+  Vehicle,
+  VehicleEntryType,
+  VehicleStatus,
+} from '../vehicles/entities/vehicle.entity';
 import { Document } from '../documents/entities/document.entity';
 import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
 
@@ -123,6 +127,7 @@ export class PurchaseService {
     vehicle.acquisitionPrice = createPurchaseDto.agreedPrice;
     vehicle.entryDate = purchaseDate;
     vehicle.status = VehicleStatus.PRESALE;
+    vehicle.entryType = VehicleEntryType.DIRECT_PURCHASE;
     await this.vehicleRepository.save(vehicle);
 
     const savedPurchase = await this.purchaseRepository.save(purchase);
@@ -249,6 +254,7 @@ export class PurchaseService {
     if (vehicle) {
       vehicle.acquisitionPrice = savedPurchase.agreedPrice;
       vehicle.entryDate = savedPurchase.purchaseDate;
+      vehicle.entryType = VehicleEntryType.DIRECT_PURCHASE;
       vehicle.status =
         savedPurchase.status === PurchaseStatus.CANCELLED
           ? VehicleStatus.INSPECTION

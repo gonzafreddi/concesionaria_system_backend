@@ -37,6 +37,18 @@ export class VehicleDetailDto {
   acquisitionPrice: number | null;
 
   @ApiPropertyOptional({
+    example: 87500,
+    nullable: true,
+  })
+  mileage: number | null;
+
+  @ApiPropertyOptional({
+    example: 'Motor 1.6, caja manual, 6 airbags, ABS.',
+    nullable: true,
+  })
+  technicalSpecifications: string | null;
+
+  @ApiPropertyOptional({
     example: '2026-03-24T15:30:00.000Z',
     nullable: true,
   })

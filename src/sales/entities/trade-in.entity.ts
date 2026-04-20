@@ -29,7 +29,7 @@ export class TradeIn {
   @ManyToOne(() => Sale, (s) => s.tradeIns, { onDelete: 'CASCADE' })
   sale: Sale;
 
-  @ManyToOne(() => Vehicle)
+  @ManyToOne(() => Vehicle, (vehicle) => vehicle.tradeIns)
   vehicle: Vehicle;
 
   // Valuación del vehículo dado como parte de pago

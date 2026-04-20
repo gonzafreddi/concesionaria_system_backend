@@ -8,6 +8,9 @@ import {
   Vehicle,
 } from './entities/vehicle.entity';
 import { VehiclesService } from './vehicles.service';
+import { PurchaseStatus } from '../purchase/entities/purchase.entity';
+import { ConsignmentStatus } from '../consignment/entities/consignment.entity';
+import { SaleStatus } from '../sales/entities/sale.entity';
 
 describe('VehiclesService', () => {
   let service: VehiclesService;
@@ -51,6 +54,8 @@ describe('VehiclesService', () => {
         color: 'Gris',
         vehiclePlate: 'AA123BB',
         price: '18500000',
+        mileage: 87500,
+        technicalSpecifications: 'Motor 2.0 AT',
         status: VehicleStatus.AVAILABLE,
         entryType: VehicleEntryType.DIRECT_PURCHASE,
         ownerClientId: null,
@@ -74,6 +79,8 @@ describe('VehiclesService', () => {
         color: 'Gris',
         vehiclePlate: 'AA123BB',
         price: 18500000,
+        mileage: 87500,
+        technicalSpecifications: 'Motor 2.0 AT',
         status: VehicleStatus.AVAILABLE,
         entryType: VehicleEntryType.DIRECT_PURCHASE,
         ownerClientId: null,
@@ -81,7 +88,7 @@ describe('VehiclesService', () => {
     ]);
   });
 
-  it('incluye purchaseDate en formato ISO al obtener el detalle del vehiculo', async () => {
+  it('incluye purchaseDate, mileage y technicalSpecifications al obtener el detalle del vehiculo', async () => {
     repositoryMock.findOne.mockResolvedValue({
       id: 7,
       type: VehicleType.USED,
@@ -92,6 +99,8 @@ describe('VehiclesService', () => {
       vehiclePlate: 'AA123BB',
       price: '18500000',
       acquisitionPrice: '15000000',
+      mileage: 87500,
+      technicalSpecifications: 'Motor 1.6 manual',
       status: VehicleStatus.AVAILABLE,
       entryType: VehicleEntryType.CONSIGNMENT,
       ownerClientId: 18,
@@ -109,8 +118,75 @@ describe('VehiclesService', () => {
       relations: ['purchases'],
     });
     expect(result.purchaseDate).toBe('2026-03-24T15:30:00.000Z');
+    expect(result.mileage).toBe(87500);
+    expect(result.technicalSpecifications).toBe('Motor 1.6 manual');
     expect(result.entryType).toBe(VehicleEntryType.CONSIGNMENT);
     expect(result.ownerClientId).toBe(18);
+  });
+
+  it('lista en el get general solo vehiculos que ingresaron al stock', async () => {
+    repositoryMock.find.mockResolvedValue([
+      {
+        id: 12,
+        vehiclePlate: 'AB123CD',
+        entryType: VehicleEntryType.DIRECT_PURCHASE,
+        mileage: 100000,
+        technicalSpecifications: '1.4 nafta',
+        purchases: [{ id: 1, status: PurchaseStatus.DRAFT }],
+        consignments: [],
+        tradeIns: [],
+      },
+      {
+        id: 13,
+        vehiclePlate: 'AC456EF',
+        entryType: VehicleEntryType.CONSIGNMENT,
+        purchases: [],
+        consignments: [{ id: 2, status: ConsignmentStatus.ACTIVE }],
+        tradeIns: [],
+      },
+      {
+        id: 14,
+        vehiclePlate: 'AD789GH',
+        entryType: VehicleEntryType.TRADE_IN,
+        purchases: [],
+        consignments: [],
+        tradeIns: [{ id: 3, sale: { status: SaleStatus.DRAFT } }],
+      },
+      {
+        id: 15,
+        vehiclePlate: 'ZZ111ZZ',
+        entryType: VehicleEntryType.DIRECT_PURCHASE,
+        purchases: [],
+        consignments: [],
+        tradeIns: [],
+      },
+    ]);
+
+    const result = await service.findAll();
+
+    expect(repositoryMock.find).toHaveBeenCalledWith({
+      relations: ['purchases', 'consignments', 'tradeIns', 'tradeIns.sale'],
+      order: { id: 'DESC' },
+    });
+    expect(result).toEqual([
+      {
+        id: 12,
+        vehiclePlate: 'AB123CD',
+        entryType: VehicleEntryType.DIRECT_PURCHASE,
+        mileage: 100000,
+        technicalSpecifications: '1.4 nafta',
+      },
+      {
+        id: 13,
+        vehiclePlate: 'AC456EF',
+        entryType: VehicleEntryType.CONSIGNMENT,
+      },
+      {
+        id: 14,
+        vehiclePlate: 'AD789GH',
+        entryType: VehicleEntryType.TRADE_IN,
+      },
+    ]);
   });
 
   it('lista solo los vehiculos disponibles para compra cuando no tienen compras asociadas', async () => {
@@ -124,6 +200,8 @@ describe('VehiclesService', () => {
         color: 'Rojo',
         vehiclePlate: 'AB123CD',
         price: '14350000',
+        mileage: 92000,
+        technicalSpecifications: '1.5 manual',
         status: VehicleStatus.PENDING_INSPECTION,
         entryType: VehicleEntryType.DIRECT_PURCHASE,
         ownerClientId: null,
@@ -161,6 +239,8 @@ describe('VehiclesService', () => {
         color: 'Rojo',
         vehiclePlate: 'AB123CD',
         price: 14350000,
+        mileage: 92000,
+        technicalSpecifications: '1.5 manual',
         status: VehicleStatus.PENDING_INSPECTION,
         entryType: VehicleEntryType.DIRECT_PURCHASE,
         ownerClientId: null,

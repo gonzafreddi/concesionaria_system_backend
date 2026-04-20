@@ -3,10 +3,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { Vehicle, VehicleEntryType, VehicleStatus } from './entities/vehicle.entity';
+import {
+  Vehicle,
+  VehicleEntryType,
+  VehicleStatus,
+} from './entities/vehicle.entity';
 import { PreSaleStatus } from '../pre-sale/entities/pre-sale-status.enum';
 import { VehicleSaleOptionDto } from './dto/vehicle-sale-option.dto';
 import { VehicleDetailDto } from './dto/vehicle-detail.dto';
+import { PurchaseStatus } from '../purchase/entities/purchase.entity';
+import { ConsignmentStatus } from '../consignment/entities/consignment.entity';
+import { SaleStatus } from '../sales/entities/sale.entity';
+
 @Injectable()
 export class VehiclesService {
   constructor(
@@ -15,6 +23,22 @@ export class VehiclesService {
   ) {}
 
   private static readonly SALE_ELIGIBLE_STATUSES = [VehicleStatus.AVAILABLE];
+
+  private hasInventoryAcquisition(vehicle: Vehicle): boolean {
+    const hasPurchase = vehicle.purchases?.some(
+      (purchase) => purchase.status !== PurchaseStatus.CANCELLED,
+    );
+    const hasConsignment = vehicle.consignments?.some(
+      (consignment) =>
+        consignment.status !== ConsignmentStatus.CANCELLED &&
+        consignment.status !== ConsignmentStatus.RETURNED,
+    );
+    const hasTradeIn = vehicle.tradeIns?.some(
+      (tradeIn) => tradeIn.sale?.status !== SaleStatus.CANCELLED,
+    );
+
+    return Boolean(hasPurchase || hasConsignment || hasTradeIn);
+  }
 
   private async getVehicleEntityById(
     id: number,
@@ -54,7 +78,27 @@ export class VehiclesService {
         vehicle.acquisitionPrice !== undefined
           ? Number(vehicle.acquisitionPrice)
           : null,
+      mileage: vehicle.mileage ?? null,
+      technicalSpecifications: vehicle.technicalSpecifications ?? null,
       purchaseDate,
+      status: vehicle.status,
+      entryType: vehicle.entryType,
+      ownerClientId: vehicle.ownerClientId ?? null,
+    };
+  }
+
+  private mapToVehicleSaleOption(vehicle: Vehicle): VehicleSaleOptionDto {
+    return {
+      id: vehicle.id,
+      type: vehicle.type,
+      brand: vehicle.brand,
+      model: vehicle.model,
+      year: vehicle.year,
+      color: vehicle.color,
+      vehiclePlate: vehicle.vehiclePlate,
+      price: Number(vehicle.price),
+      mileage: vehicle.mileage ?? null,
+      technicalSpecifications: vehicle.technicalSpecifications ?? null,
       status: vehicle.status,
       entryType: vehicle.entryType,
       ownerClientId: vehicle.ownerClientId ?? null,
@@ -64,8 +108,7 @@ export class VehiclesService {
   create(createVehicleDto: CreateVehicleDto) {
     const vehicle = this.vehiclesRepository.create({
       ...createVehicleDto,
-      status:
-        createVehicleDto.status ?? VehicleStatus.PENDING_INSPECTION,
+      status: createVehicleDto.status ?? VehicleStatus.PENDING_INSPECTION,
       entryType:
         createVehicleDto.entryType ?? VehicleEntryType.DIRECT_PURCHASE,
       ownerClientId: createVehicleDto.ownerClientId ?? null,
@@ -73,8 +116,15 @@ export class VehiclesService {
     return this.vehiclesRepository.save(vehicle);
   }
 
-  findAll() {
-    return this.vehiclesRepository.find();
+  async findAll() {
+    const vehicles = await this.vehiclesRepository.find({
+      relations: ['purchases', 'consignments', 'tradeIns', 'tradeIns.sale'],
+      order: { id: 'DESC' },
+    });
+
+    return vehicles
+      .filter((vehicle) => this.hasInventoryAcquisition(vehicle))
+      .map(({ purchases, consignments, tradeIns, ...vehicle }) => vehicle);
   }
 
   async findOne(id: number): Promise<VehicleDetailDto> {
@@ -107,19 +157,7 @@ export class VehiclesService {
       },
     });
 
-    return vehicles.map((vehicle) => ({
-      id: vehicle.id,
-      type: vehicle.type,
-      brand: vehicle.brand,
-      model: vehicle.model,
-      year: vehicle.year,
-      color: vehicle.color,
-      vehiclePlate: vehicle.vehiclePlate,
-      price: Number(vehicle.price),
-      status: vehicle.status,
-      entryType: vehicle.entryType,
-      ownerClientId: vehicle.ownerClientId ?? null,
-    }));
+    return vehicles.map((vehicle) => this.mapToVehicleSaleOption(vehicle));
   }
 
   async getVehiclesAvailableForPurchase(): Promise<VehicleSaleOptionDto[]> {
@@ -130,19 +168,7 @@ export class VehiclesService {
 
     return vehicles
       .filter((vehicle) => !vehicle.purchases?.length)
-      .map((vehicle) => ({
-        id: vehicle.id,
-        type: vehicle.type,
-        brand: vehicle.brand,
-        model: vehicle.model,
-        year: vehicle.year,
-        color: vehicle.color,
-        vehiclePlate: vehicle.vehiclePlate,
-        price: Number(vehicle.price),
-        status: vehicle.status,
-        entryType: vehicle.entryType,
-        ownerClientId: vehicle.ownerClientId ?? null,
-      }));
+      .map((vehicle) => this.mapToVehicleSaleOption(vehicle));
   }
 
   async getPendingInspectionVehicles() {

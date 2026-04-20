@@ -19,6 +19,7 @@ import { PreSaleMechanical } from '../../pre-sale/entities/pre_sale_mechanical.e
 import { Purchase } from '../../purchase/entities/purchase.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { Consignment } from '../../consignment/entities/consignment.entity';
+import { TradeIn } from '../../sales/entities/trade-in.entity';
 export enum VehicleType {
   NEW = 'NEW',
   USED = 'USED',
@@ -124,6 +125,9 @@ export class Vehicle {
 
   @OneToMany(() => Consignment, (consignment) => consignment.vehicle)
   consignments: Consignment[];
+
+  @OneToMany(() => TradeIn, (tradeIn) => tradeIn.vehicle)
+  tradeIns: TradeIn[];
 
   @OneToOne(
     () => PreSaleAesthetic,

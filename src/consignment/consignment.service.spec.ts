@@ -3,8 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException } from '@nestjs/common';
 import { ConsignmentService } from './consignment.service';
 import { Consignment, ConsignmentStatus } from './entities/consignment.entity';
-import {
-  Vehicle,
+import {  Vehicle,
   VehicleEntryType,
   VehicleStatus,
   VehicleType,
@@ -86,8 +85,7 @@ describe('ConsignmentService', () => {
       estimatedSalePrice: 13500000,
     });
 
-    expect(vehicle.entryType).toBe(VehicleEntryType.CONSIGNMENT);
-    expect(vehicle.ownerClientId).toBe(20);
+    expect(vehicle.entryType).toBe(VehicleEntryType.CONSIGNMENT);    expect(vehicle.ownerClientId).toBe(20);
     expect(Number(vehicle.price)).toBe(13500000);
     expect(result).toEqual({
       id: 3,

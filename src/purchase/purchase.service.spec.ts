@@ -4,7 +4,11 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PurchaseService } from './purchase.service';
 import { Purchase, PurchaseStatus } from './entities/purchase.entity';
 import { Client } from '../clients/entities/client.entity';
-import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
+import {
+  Vehicle,
+  VehicleEntryType,
+  VehicleStatus,
+} from '../vehicles/entities/vehicle.entity';
 import { Document } from '../documents/entities/document.entity';
 import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
 
@@ -159,6 +163,7 @@ describe('PurchaseService', () => {
       status: VehicleStatus.PRESALE,
       acquisitionPrice: 12300000,
       entryDate: new Date('2026-04-07T11:00:00.000Z'),
+      entryType: VehicleEntryType.DIRECT_PURCHASE,
     });
     expect(result).toEqual({ id: 44 });
   });

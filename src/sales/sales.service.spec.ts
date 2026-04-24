@@ -12,14 +12,24 @@ import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { Quote } from '../quotes/entities/quote.entity';
 import { User } from '../users/entities/user.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
-import {  VehicleEntryType,
+import {
+  VehicleEntryType,
   VehicleStatus,
 } from '../vehicles/entities/vehicle.entity';
 import { VehiclesService } from '../vehicles/vehicles.service';
-import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
+import {
+  Consignment,
+  ConsignmentStatus,
+} from '../consignment/entities/consignment.entity';
 import { SaleAccountBalanceService } from './sale-account-balance.service';
 import { SaleBalanceCalculatorService } from './sale-balance-calculator.service';
-import { DocumentationStatus, Sale, SaleStatus, SaleType, TransferStatus } from './entities/sale.entity';
+import {
+  DocumentationStatus,
+  Sale,
+  SaleStatus,
+  SaleType,
+  TransferStatus,
+} from './entities/sale.entity';
 import { TradeIn } from './entities/trade-in.entity';
 import { SalesService } from './sales.service';
 
@@ -124,6 +134,7 @@ describe('SalesService', () => {
     const tradeInVehicle = {
       id: 2,
       price: 20000,
+      acquisitionPrice: 15000,
       status: VehicleStatus.PRESALE,
       vehiclePlate: 'BBB222',
     } as Vehicle;
@@ -176,11 +187,13 @@ describe('SalesService', () => {
       save: jest.fn().mockImplementation(async (entity) => entity),
     };
 
-    dataSource.transaction.mockImplementation(async (callback) => callback(manager));
+    dataSource.transaction.mockImplementation(async (callback) =>
+      callback(manager),
+    );
     saleBalanceCalculatorServiceMock.calculate.mockReturnValue({
-      tradeInsTotal: 20000,
+      tradeInsTotal: 15000,
       paymentsTotal: 0,
-      pendingBalance: 80000,
+      pendingBalance: 85000,
     });
 
     await service.create({
@@ -195,7 +208,81 @@ describe('SalesService', () => {
     } as any);
 
     expect(tradeInVehicle.status).toBe(VehicleStatus.PRESALE);
-    expect(tradeInVehicle.entryType).toBe(VehicleEntryType.TRADE_IN);  });
+    expect(tradeInVehicle.entryType).toBe(VehicleEntryType.TRADE_IN);
+    expect(manager.create).toHaveBeenCalledWith(
+      TradeIn,
+      expect.objectContaining({
+        tradeInValue: 15000,
+      }),
+    );
+  });
+
+  it('usa el precio de adquisicion como valor de la permuta al crear una venta', async () => {
+    const availableVehicle = {
+      id: 1,
+      price: 100000,
+      status: VehicleStatus.AVAILABLE,
+      vehiclePlate: 'AAA111',
+    } as Vehicle;
+
+    const tradeInVehicle = {
+      id: 2,
+      price: 35000,
+      acquisitionPrice: 22000,
+      status: VehicleStatus.AVAILABLE,
+      vehiclePlate: 'BBB222',
+    } as Vehicle;
+
+    const manager = {
+      findOne: jest.fn().mockImplementation((entity, options) => {
+        if (entity === Vehicle && options.where.id === 1) {
+          return Promise.resolve(availableVehicle);
+        }
+        if (entity === Vehicle && options.where.id === 2) {
+          return Promise.resolve(tradeInVehicle);
+        }
+        if (entity === Client) {
+          return Promise.resolve({ id: 1 } as Client);
+        }
+        if (entity === User) {
+          return Promise.resolve({ id: 1 } as User);
+        }
+        if (entity === TradeIn) {
+          return Promise.resolve(null);
+        }
+        return Promise.resolve(null);
+      }),
+      create: jest.fn().mockImplementation((entity, payload) => payload),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+    };
+
+    dataSource.transaction.mockImplementation(async (callback) =>
+      callback(manager),
+    );
+    saleBalanceCalculatorServiceMock.calculate.mockReturnValue({
+      tradeInsTotal: 22000,
+      paymentsTotal: 0,
+      pendingBalance: 78000,
+    });
+
+    await service.create({
+      clientId: 1,
+      vehicleId: 1,
+      userId: 1,
+      basePrice: 100000,
+      tradeIns: 2,
+      discount: 0,
+      transferPercentage: 0,
+      adminExpenses: 0,
+    } as any);
+
+    expect(manager.create).toHaveBeenCalledWith(
+      TradeIn,
+      expect.objectContaining({
+        tradeInValue: 22000,
+      }),
+    );
+  });
 
   it('marca la consignacion como RESERVED cuando se crea una venta para un vehiculo consignado', async () => {
     const availableVehicle = {
@@ -249,7 +336,9 @@ describe('SalesService', () => {
       save: jest.fn().mockImplementation(async (entity) => entity),
     };
 
-    dataSource.transaction.mockImplementation(async (callback) => callback(manager));
+    dataSource.transaction.mockImplementation(async (callback) =>
+      callback(manager),
+    );
     saleBalanceCalculatorServiceMock.calculate.mockReturnValue({
       tradeInsTotal: 0,
       paymentsTotal: 0,

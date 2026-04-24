@@ -206,7 +206,9 @@ export class SalesService {
           );
         }
 
-        if (Number(tradeInVehicle.price) > finalPrice) {
+        const tradeInValue = this.getTradeInAcquisitionPrice(tradeInVehicle);
+
+        if (tradeInValue > finalPrice) {
           throw new BadRequestException(
             `El valor del vehículo entregado no puede exceder el precio final`,
           );
@@ -239,7 +241,7 @@ export class SalesService {
         const tradeIn = manager.create(TradeIn, {
           vehicle: tradeInVehicle,
           sale,
-          tradeInValue: tradeInVehicle.price,
+          tradeInValue: this.getTradeInAcquisitionPrice(tradeInVehicle),
         });
 
         await manager.save(tradeIn);
@@ -520,7 +522,8 @@ export class SalesService {
    *
    * Validaciones:
    * - Vehicle no debe estar en otra SALE activa
-   * - tradeInValue no puede exceder finalPrice
+   * - La valuación se toma del precio de adquisición del vehículo
+   * - La valuación no puede exceder finalPrice
    * - Sale no debe estar cancelada ni confirmada
    *
    * Efecto:
@@ -528,7 +531,7 @@ export class SalesService {
    * - Recalcula estado financiero automáticamente
    */
   async addTradeIn(createTradeInDto: CreateTradeInDto) {
-    const { saleId, vehicleId, tradeInValue } = createTradeInDto;
+    const { saleId, vehicleId } = createTradeInDto;
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -558,6 +561,8 @@ export class SalesService {
 
       if (!vehicle)
         throw new NotFoundException(`Vehículo ${vehicleId} no encontrado`);
+
+      const tradeInValue = this.getTradeInAcquisitionPrice(vehicle);
 
       // Validar que no esté en otra SALE activa
       const existingTradeIn = await queryRunner.manager.findOne(TradeIn, {
@@ -844,6 +849,18 @@ export class SalesService {
       (total, tradeIn) => total + Number(tradeIn.tradeInValue ?? 0),
       0,
     );
+  }
+
+  private getTradeInAcquisitionPrice(vehicle: Vehicle): number {
+    const acquisitionPrice = Number(vehicle.acquisitionPrice ?? 0);
+
+    if (acquisitionPrice <= 0) {
+      throw new BadRequestException(
+        'El vehículo entregado en permuta debe tener precio de adquisición',
+      );
+    }
+
+    return acquisitionPrice;
   }
 
   private async syncPrimaryVehicleStatus(

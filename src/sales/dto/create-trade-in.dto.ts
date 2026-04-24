@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsInt, Min } from 'class-validator';
+import { IsNumber, IsInt, IsOptional, Min } from 'class-validator';
 
 /**
  * CreateTradeInDto
@@ -7,13 +7,13 @@ import { IsNumber, IsInt, Min } from 'class-validator';
  * DTO para registrar un vehículo como parte de pago (trade-in)
  * 
  * - vehicleId: ID del vehículo usado que se aporta
- * - tradeInValue: Valuación del vehículo (se descuenta de finalPrice)
+ * - tradeInValue: legado/opcional; la valuación se toma del acquisitionPrice del vehículo
  * 
  * Validaciones en SalesService:
  * - Vehicle debe existir
  * - Vehicle no puede estar en otra venta activa
  * - Sale no debe estar cerrada
- * - tradeInValue no puede exceder finalPrice
+ * - acquisitionPrice no puede exceder finalPrice
  */
 
 export class CreateTradeInDto {
@@ -25,8 +25,13 @@ export class CreateTradeInDto {
   @IsInt()
   vehicleId: number;
 
-  @ApiProperty()
+  @ApiProperty({
+    required: false,
+    description:
+      'Campo legado. La valuación se calcula desde el precio de adquisición del vehículo.',
+  })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  tradeInValue: number;
+  tradeInValue?: number;
 }

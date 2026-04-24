@@ -102,6 +102,7 @@ export class VehiclesService {
       status: vehicle.status,
       entryType: vehicle.entryType,
       ownerClientId: vehicle.ownerClientId ?? null,
+      aquisitionPrice: vehicle.acquisitionPrice,
     };
   }
 
@@ -109,8 +110,7 @@ export class VehiclesService {
     const vehicle = this.vehiclesRepository.create({
       ...createVehicleDto,
       status: createVehicleDto.status ?? VehicleStatus.PENDING_INSPECTION,
-      entryType:
-        createVehicleDto.entryType ?? VehicleEntryType.DIRECT_PURCHASE,
+      entryType: createVehicleDto.entryType ?? VehicleEntryType.DIRECT_PURCHASE,
       ownerClientId: createVehicleDto.ownerClientId ?? null,
     } as any);
     return this.vehiclesRepository.save(vehicle);

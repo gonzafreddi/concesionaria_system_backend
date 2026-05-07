@@ -45,6 +45,9 @@ export class CloudinaryService {
           },
           (error, result) => {
             if (error || !result) {
+              this.logger.error(
+                `Cloudinary upload failed for folder ${folder}: ${this.formatCloudinaryError(error)}`,
+              );
               reject(
                 new InternalServerErrorException(
                   'No se pudo subir la imagen a Cloudinary',
@@ -79,11 +82,18 @@ export class CloudinaryService {
       });
 
       if (result.result !== 'ok' && result.result !== 'not found') {
+        this.logger.error(
+          `Cloudinary delete failed for publicId ${publicId}: ${JSON.stringify(result)}`,
+        );
         throw new InternalServerErrorException(
           'No se pudo eliminar la imagen de Cloudinary',
         );
       }
     } catch (error) {
+      this.logger.error(
+        `Unexpected Cloudinary delete error for publicId ${publicId}: ${this.formatCloudinaryError(error)}`,
+      );
+
       if (error instanceof InternalServerErrorException) {
         throw error;
       }
@@ -91,6 +101,22 @@ export class CloudinaryService {
       throw new InternalServerErrorException(
         'Ocurrió un error inesperado al eliminar la imagen de Cloudinary',
       );
+    }
+  }
+
+  private formatCloudinaryError(error: unknown): string {
+    if (!error) {
+      return 'unknown error';
+    }
+
+    if (error instanceof Error) {
+      return error.stack || error.message;
+    }
+
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
     }
   }
 

@@ -18,6 +18,8 @@ import { DocumentsModule } from './documents/documents.module';
 import { PurchaseModule } from './purchase/purchase.module';
 import { ConsignmentModule } from './consignment/consignment.module';
 import { LoggerMiddleware } from './logger/logger.middleware';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { VehicleImagesModule } from './vehicle-images/vehicle-images.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -44,6 +46,8 @@ import { LoggerMiddleware } from './logger/logger.middleware';
     DocumentsModule,
     PurchaseModule,
     ConsignmentModule,
+    CloudinaryModule,
+    VehicleImagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

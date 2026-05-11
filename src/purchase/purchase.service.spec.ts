@@ -9,8 +9,8 @@ import {
   VehicleEntryType,
   VehicleStatus,
 } from '../vehicles/entities/vehicle.entity';
-import { Document } from '../documents/entities/document.entity';
 import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
+import { GeneratedDocument } from '../documents/entities/generated-document.entity';
 
 describe('PurchaseService', () => {
   let service: PurchaseService;
@@ -74,7 +74,7 @@ describe('PurchaseService', () => {
           useValue: vehicleRepository,
         },
         {
-          provide: getRepositoryToken(Document),
+          provide: getRepositoryToken(GeneratedDocument),
           useValue: documentRepository,
         },
         {

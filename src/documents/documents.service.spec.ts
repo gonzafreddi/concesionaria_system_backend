@@ -1,30 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { DocumentsService } from './documents.service';
-import { Document } from './entities/document.entity';
-import { Sale } from '../sales/entities/sale.entity';
-import { Vehicle } from '../vehicles/entities/vehicle.entity';
-import { Payment } from '../payments/entities/payment.entity';
-import { Client } from '../clients/entities/client.entity';
-import { Purchase } from '../purchase/entities/purchase.entity';
+import { GeneratedDocumentsService } from './documents.service';
+import { GeneratedDocument } from './entities/generated-document.entity';
 
 describe('DocumentsService', () => {
-  let service: DocumentsService;
+  let service: GeneratedDocumentsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        DocumentsService,
-        { provide: getRepositoryToken(Document), useValue: {} },
-        { provide: getRepositoryToken(Sale), useValue: {} },
-        { provide: getRepositoryToken(Purchase), useValue: {} },
-        { provide: getRepositoryToken(Vehicle), useValue: {} },
-        { provide: getRepositoryToken(Payment), useValue: {} },
-        { provide: getRepositoryToken(Client), useValue: {} },
+        GeneratedDocumentsService,
+        { provide: getRepositoryToken(GeneratedDocument), useValue: {} },
       ],
     }).compile();
 
-    service = module.get<DocumentsService>(DocumentsService);
+    service = module.get<GeneratedDocumentsService>(GeneratedDocumentsService);
   });
 
   it('should be defined', () => {

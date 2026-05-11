@@ -73,12 +73,69 @@ export class CloudinaryService {
     }
   }
 
+  async uploadRawFile(
+    file: Express.Multer.File,
+    folder: string,
+    publicId?: string,
+  ): Promise<UploadApiResponse> {
+    this.ensureConfigured();
+
+    try {
+      return await new Promise<UploadApiResponse>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder,
+            public_id: publicId,
+            resource_type: 'raw',
+            format: 'pdf',
+          },
+          (error, result) => {
+            if (error || !result) {
+              this.logger.error(
+                `Cloudinary raw upload failed for folder ${folder}: ${this.formatCloudinaryError(error)}`,
+              );
+              reject(
+                new InternalServerErrorException(
+                  'No se pudo subir el documento a Cloudinary',
+                ),
+              );
+              return;
+            }
+
+            resolve(result);
+          },
+        );
+
+        uploadStream.end(file.buffer);
+      });
+    } catch (error) {
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'Ocurrió un error inesperado al subir el documento a Cloudinary',
+      );
+    }
+  }
+
   async deleteImage(publicId: string): Promise<void> {
+    return this.deleteFile(publicId, 'image');
+  }
+
+  async deleteRawFile(publicId: string): Promise<void> {
+    return this.deleteFile(publicId, 'raw');
+  }
+
+  private async deleteFile(
+    publicId: string,
+    resourceType: 'image' | 'raw',
+  ): Promise<void> {
     this.ensureConfigured();
 
     try {
       const result = await cloudinary.uploader.destroy(publicId, {
-        resource_type: 'image',
+        resource_type: resourceType,
       });
 
       if (result.result !== 'ok' && result.result !== 'not found') {
@@ -86,7 +143,7 @@ export class CloudinaryService {
           `Cloudinary delete failed for publicId ${publicId}: ${JSON.stringify(result)}`,
         );
         throw new InternalServerErrorException(
-          'No se pudo eliminar la imagen de Cloudinary',
+          'No se pudo eliminar el archivo de Cloudinary',
         );
       }
     } catch (error) {
@@ -99,7 +156,7 @@ export class CloudinaryService {
       }
 
       throw new InternalServerErrorException(
-        'Ocurrió un error inesperado al eliminar la imagen de Cloudinary',
+        'Ocurrió un error inesperado al eliminar el archivo de Cloudinary',
       );
     }
   }

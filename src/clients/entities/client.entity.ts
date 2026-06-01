@@ -1,4 +1,7 @@
 import {
+  ApiPropertyOptional,
+} from '@nestjs/swagger';
+import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
@@ -41,9 +44,17 @@ export class Client {
   @Column({ nullable: true })
   province: string;
 
+  @ApiPropertyOptional({
+    description: 'Firma digital del cliente serializada como base64 o data URL',
+    nullable: true,
+  })
   @Column({ type: 'text', name: 'signature_data', nullable: true })
   signatureData: string | null;
 
+  @ApiPropertyOptional({
+    description: 'Fecha en la que se registró o actualizó la firma digital',
+    nullable: true,
+  })
   @Column({ type: 'timestamp', name: 'signature_created_at', nullable: true })
   signatureCreatedAt: Date | null;
 

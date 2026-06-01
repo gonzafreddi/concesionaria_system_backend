@@ -13,7 +13,11 @@ export class ClientsService {
   ) {}
 
   create(createClientDto: CreateClientDto) {
-    const client = this.clientsRepository.create(createClientDto as any);
+    const client = this.clientsRepository.create({
+      ...createClientDto,
+      signatureData: createClientDto.signatureData ?? null,
+      signatureCreatedAt: createClientDto.signatureData ? new Date() : null,
+    } as any);
     return this.clientsRepository.save(client);
   }
 
@@ -29,7 +33,16 @@ export class ClientsService {
 
   async update(id: number, updateClientDto: UpdateClientDto) {
     const client = await this.findOne(id);
+
     Object.assign(client, updateClientDto);
+
+    if (updateClientDto.signatureData !== undefined) {
+      client.signatureData = updateClientDto.signatureData ?? null;
+      client.signatureCreatedAt = updateClientDto.signatureData
+        ? new Date()
+        : null;
+    }
+
     return this.clientsRepository.save(client);
   }
 

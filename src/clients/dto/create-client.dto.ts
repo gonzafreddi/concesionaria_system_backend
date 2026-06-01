@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, IsEmail } from 'class-validator';
 
 export class CreateClientDto {
@@ -41,4 +41,14 @@ export class CreateClientDto {
   @IsOptional()
   @IsString()
   province?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Firma digital del cliente serializada como base64 o data URL',
+    example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...',
+    nullable: true,
+  })
+  @IsOptional()
+  @IsString()
+  signatureData?: string | null;
 }

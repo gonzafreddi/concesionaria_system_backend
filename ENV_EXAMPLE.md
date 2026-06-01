@@ -4,8 +4,10 @@ Usa este archivo como referencia para crear tu `.env` local.
 
 ```env
 # App
+NODE_ENV=development
 PORT=3001
 ENABLE_SWAGGER=true
+TYPEORM_SYNCHRONIZE=false
 
 # CORS
 # Separar multiples origenes con coma
@@ -29,9 +31,11 @@ CLOUDINARY_API_SECRET=tu_api_secret
 
 ## Notas
 
-- `JWT_SECRET` conviene tratarla como obligatoria, aunque el codigo actual no valida su ausencia al iniciar.
+- En produccion, `NODE_ENV=production`, `JWT_SECRET`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_NAME`, `CORS_ORIGINS` y las variables de Cloudinary son obligatorias al iniciar.
+- `TYPEORM_SYNCHRONIZE` debe quedar en `false` en produccion. Solo puede activarse explicitamente fuera de produccion.
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS` y `DB_NAME` tambien los usa `npm run db:migrate`.
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` y `CLOUDINARY_API_SECRET` son obligatorias para subir y eliminar imágenes de vehículos.
 - Si no definis `CORS_ORIGINS`, la app deja `origin: false`.
 - Si no definis `PORT`, la app arranca en `3001`.
 - Si no definis `ENABLE_SWAGGER=true`, Swagger no se expone en `/api/docs`.
+- En produccion se recomienda `ENABLE_SWAGGER=false` salvo que se publique detras de una red privada o auth externa.

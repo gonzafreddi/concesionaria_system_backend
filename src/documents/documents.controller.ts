@@ -25,7 +25,6 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
-import { Public } from '../auth/decorators/public.decorator';
 import { CreateGeneratedDocumentDto } from './dto/create-generated-document.dto';
 import { FindGeneratedDocumentsQueryDto } from './dto/find-generated-documents-query.dto';
 import {
@@ -39,7 +38,6 @@ import { GeneratedDocumentsService } from './documents.service';
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
 
 @ApiTags('documents')
-@Public()
 @Controller('documents')
 export class DocumentsController {
   constructor(

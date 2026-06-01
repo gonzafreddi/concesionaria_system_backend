@@ -20,16 +20,17 @@ import { ConsignmentModule } from './consignment/consignment.module';
 import { LoggerMiddleware } from './logger/logger.middleware';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { VehicleImagesModule } from './vehicle-images/vehicle-images.module';
+import {
+  getDatabaseConfig,
+  shouldSynchronizeSchema,
+} from './config/environment';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: Number(process.env.DB_PORT) || 5432,
-      username: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASS || 'postgres',
-      database: process.env.DB_NAME || 'concesionaria',
-      synchronize: true,
+      ...getDatabaseConfig(),
+      synchronize: shouldSynchronizeSchema(),
       autoLoadEntities: true,
     }),
     VehicleRequestModule,

@@ -3,13 +3,6 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { comparePassword } from '../utils/encrypt';
-import { httpResponseType } from '../types/http/response,type';
-
-const response: httpResponseType = {
-  statusCode: 0,
-  message: '',
-  data: null,
-};
 
 /**
  * Servicio de autenticación

@@ -10,6 +10,7 @@ npm run lint:check
 npm test
 npm run test:e2e
 npm run build
+npm run seed:admin:prod
 npm run start:prod
 ```
 
@@ -30,16 +31,22 @@ DB_NAME=concesionaria
 CLOUDINARY_CLOUD_NAME=cloud-name
 CLOUDINARY_API_KEY=api-key
 CLOUDINARY_API_SECRET=api-secret
+ADMIN_EMAIL=admin@concesionaria.com
+ADMIN_PASSWORD=admin123
+ADMIN_NAME=Administrador
+ADMIN_RESET_PASSWORD=false
 ```
 
 ## Checklist previo al deploy
 
 - Ejecutar `npm run db:migrate` en desarrollo o `npm run db:migrate:prod` despues del build contra la base de produccion antes de levantar la nueva version.
+- Ejecutar `npm run seed:admin` en desarrollo o `npm run seed:admin:prod` despues del build para crear el primer usuario administrador.
 - Confirmar que `TYPEORM_SYNCHRONIZE=false`.
 - Confirmar que `CORS_ORIGINS` solo incluye dominios reales del frontend.
 - Confirmar que `ENABLE_SWAGGER=false` o que `/api/docs` queda detras de una capa privada.
 - Confirmar que `/health` responde `200` despues del deploy.
 - Probar login, carga de documentos, carga de imagenes y flujo de venta en staging.
+- Cambiar la contraseña inicial del admin despues del primer login.
 
 ## Seguridad aplicada
 

@@ -9,6 +9,8 @@
     "build": "nest build",
     "db:migrate": "ts-node scripts/run-sql-migrations.ts",
     "db:migrate:prod": "node dist/scripts/run-sql-migrations.js",
+    "seed:admin": "ts-node scripts/seed-admin.ts",
+    "seed:admin:prod": "node dist/scripts/seed-admin.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

@@ -51,7 +51,7 @@ export function getDatabaseConfig() {
 }
 
 export function shouldSynchronizeSchema(): boolean {
-  return !isProduction() && process.env.TYPEORM_SYNCHRONIZE === 'true';
+  return process.env.TYPEORM_SYNCHRONIZE === 'true';
 }
 
 export function validateRequiredEnvironment(): void {

@@ -41,7 +41,7 @@ ADMIN_RESET_PASSWORD=false
 
 - Ejecutar `npm run db:migrate` en desarrollo o `npm run db:migrate:prod` despues del build contra la base de produccion antes de levantar la nueva version.
 - Ejecutar `npm run seed:admin` en desarrollo o `npm run seed:admin:prod` despues del build para crear el primer usuario administrador.
-- Confirmar que `TYPEORM_SYNCHRONIZE=false`.
+- Para el primer arranque en una base vacia se puede usar `TYPEORM_SYNCHRONIZE=true`; despues de crear las tablas, cambiarlo a `false` y reiniciar.
 - Confirmar que `CORS_ORIGINS` solo incluye dominios reales del frontend.
 - Confirmar que `ENABLE_SWAGGER=false` o que `/api/docs` queda detras de una capa privada.
 - Confirmar que `/health` responde `200` despues del deploy.

@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { Client } from 'pg';
 import { encryptPassword } from '../src/utils/encrypt';
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@concesionaria.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@auto3.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const ADMIN_NAME = process.env.ADMIN_NAME || 'Administrador';
 const RESET_PASSWORD = process.env.ADMIN_RESET_PASSWORD === 'true';

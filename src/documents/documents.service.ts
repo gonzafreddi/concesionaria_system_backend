@@ -27,6 +27,7 @@ export class GeneratedDocumentsService {
   async uploadDocument(
     file: Express.Multer.File,
     createDto: CreateGeneratedDocumentDto,
+    generatedById: string | null,
   ): Promise<GeneratedDocument> {
     this.validateFile(file);
     const documentId = randomUUID();
@@ -44,7 +45,7 @@ export class GeneratedDocumentsService {
       mimeType: file.mimetype,
       size: file.size,
       status: createDto.status ?? DocumentStatus.GENERATED,
-      generatedById: null,
+      generatedById,
     });
 
     return this.documentsRepository.save(document);
@@ -120,6 +121,13 @@ export class GeneratedDocumentsService {
     if (file.size > MAX_FILE_SIZE_BYTES) {
       throw new BadRequestException(
         'El archivo supera el máximo permitido de 15MB',
+      );
+    }
+
+    const header = file.buffer.subarray(0, 1024).toString('latin1');
+    if (!header.includes('%PDF-')) {
+      throw new BadRequestException(
+        'El contenido del archivo no corresponde a un PDF válido',
       );
     }
   }

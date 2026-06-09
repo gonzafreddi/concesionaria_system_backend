@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { Client } from './entities/client.entity';
@@ -13,11 +13,15 @@ export class ClientsService {
   ) {}
 
   create(createClientDto: CreateClientDto) {
-    const client = this.clientsRepository.create({
-      ...createClientDto,
+    const { signatureCreatedAt, ...clientData } = createClientDto;
+    const clientDataToSave: DeepPartial<Client> = {
+      ...clientData,
       signatureData: createClientDto.signatureData ?? null,
-      signatureCreatedAt: createClientDto.signatureData ? new Date() : null,
-    } as any);
+      signatureCreatedAt: createClientDto.signatureData
+        ? (signatureCreatedAt ?? new Date())
+        : null,
+    };
+    const client = this.clientsRepository.create(clientDataToSave);
     return this.clientsRepository.save(client);
   }
 
@@ -33,13 +37,14 @@ export class ClientsService {
 
   async update(id: number, updateClientDto: UpdateClientDto) {
     const client = await this.findOne(id);
+    const { signatureCreatedAt, ...clientData } = updateClientDto;
 
-    Object.assign(client, updateClientDto);
+    Object.assign(client, clientData);
 
     if (updateClientDto.signatureData !== undefined) {
       client.signatureData = updateClientDto.signatureData ?? null;
       client.signatureCreatedAt = updateClientDto.signatureData
-        ? new Date()
+        ? (signatureCreatedAt ?? new Date())
         : null;
     }
 

@@ -8,6 +8,7 @@ import {
   ParseEnumPipe,
   Post,
   Query,
+  Req,
   Res,
   StreamableFile,
   UploadedFile,
@@ -25,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
+import type { Request } from 'express';
 import { CreateGeneratedDocumentDto } from './dto/create-generated-document.dto';
 import { FindGeneratedDocumentsQueryDto } from './dto/find-generated-documents-query.dto';
 import {
@@ -37,12 +39,16 @@ import { GeneratedDocumentsService } from './documents.service';
 
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
 
+type AuthenticatedRequest = Request & {
+  user?: {
+    id?: number | string;
+  };
+};
+
 @ApiTags('documents')
 @Controller('documents')
 export class DocumentsController {
-  constructor(
-    private readonly documentsService: GeneratedDocumentsService,
-  ) {}
+  constructor(private readonly documentsService: GeneratedDocumentsService) {}
 
   @Post('upload')
   @UseInterceptors(
@@ -115,22 +121,35 @@ export class DocumentsController {
     description: 'Documento creado exitosamente',
     type: GeneratedDocument,
   })
-  @ApiResponse({ status: 400, description: 'Archivo inválido o metadata inválida' })
+  @ApiResponse({
+    status: 400,
+    description: 'Archivo inválido o metadata inválida',
+  })
   uploadDocument(
     @UploadedFile() file: Express.Multer.File,
     @Body() createDocumentDto: CreateGeneratedDocumentDto,
+    @Req() request: AuthenticatedRequest,
   ): Promise<GeneratedDocument> {
-    return this.documentsService.uploadDocument(file, createDocumentDto);
+    return this.documentsService.uploadDocument(
+      file,
+      createDocumentDto,
+      request.user?.id !== undefined ? String(request.user.id) : null,
+    );
   }
 
   @Get()
   @ApiOperation({
     summary: 'Listar documentos',
-    description: 'Obtiene todos los documentos registrados con filtros opcionales.',
+    description:
+      'Obtiene todos los documentos registrados con filtros opcionales.',
   })
   @ApiQuery({ name: 'templateCode', required: false, type: String })
   @ApiQuery({ name: 'documentType', required: false, enum: DocumentType })
-  @ApiQuery({ name: 'relatedEntityType', required: false, enum: RelatedEntityType })
+  @ApiQuery({
+    name: 'relatedEntityType',
+    required: false,
+    enum: RelatedEntityType,
+  })
   @ApiQuery({ name: 'relatedEntityId', required: false, type: String })
   @ApiQuery({ name: 'status', required: false, enum: DocumentStatus })
   @ApiResponse({
@@ -198,7 +217,7 @@ export class DocumentsController {
     response.setHeader('Content-Length', String(document.size));
     response.setHeader(
       'Content-Disposition',
-      `inline; filename="${encodeURIComponent(document.originalFileName)}"`,
+      this.buildContentDisposition(document.originalFileName),
     );
 
     return new StreamableFile(document.fileData);
@@ -233,5 +252,15 @@ export class DocumentsController {
   @ApiResponse({ status: 404, description: 'Documento no encontrado' })
   remove(@Param('id') id: string): Promise<{ deleted: true }> {
     return this.documentsService.remove(id);
+  }
+
+  private buildContentDisposition(fileName: string): string {
+    const fallbackName =
+      fileName
+        .normalize('NFKD')
+        .replace(/[^\x20-\x7E]/g, '')
+        .replace(/["\\]/g, '_') || 'document.pdf';
+
+    return `inline; filename="${fallbackName}"; filename*=UTF-8''${encodeURIComponent(fileName)}`;
   }
 }

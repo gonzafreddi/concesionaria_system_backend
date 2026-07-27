@@ -173,6 +173,75 @@ describe('PaymentsService', () => {
     expect(consignment.status).toBe(ConsignmentStatus.SOLD);
   });
 
+  it('usa paidAt enviado cuando el pago confirmado informa fecha efectiva', async () => {
+    const sale = {
+      id: 18,
+      status: SaleStatus.DRAFT,
+      totalPaid: 0,
+      finalPrice: 12000,
+      tradeIns: [],
+      payments: [],
+      vehicle: { id: 99, status: VehicleStatus.RESERVED },
+    } as Sale;
+
+    const manager = {
+      findOne: jest.fn().mockImplementation((entity) => {
+        if (entity === Sale) {
+          return Promise.resolve(sale);
+        }
+        if (entity === Payment) {
+          return Promise.resolve({ id: 103, sale });
+        }
+        return Promise.resolve(null);
+      }),
+      create: jest.fn().mockImplementation((_entity, payload) => ({
+        id: 103,
+        ...payload,
+      })),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+      find: jest.fn().mockResolvedValue([{ amount: 12000, status: PaymentStatus.CONFIRMED }]),
+    };
+
+    const queryRunner = {
+      manager,
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+    };
+
+    dataSourceMock.createQueryRunner.mockReturnValue(queryRunner);
+    saleBalanceCalculatorServiceMock.calculate
+      .mockReturnValueOnce({
+        tradeInsTotal: 0,
+        paymentsTotal: 0,
+        pendingBalance: 12000,
+      })
+      .mockReturnValueOnce({
+        tradeInsTotal: 0,
+        paymentsTotal: 12000,
+        pendingBalance: 0,
+      });
+    paymentRepositoryMock.findOne.mockResolvedValue({ id: 103, sale });
+
+    await service.createPayment({
+      saleId: 18,
+      amount: 12000,
+      method: PaymentMethod.CASH,
+      currency: Currency.ARS,
+      status: PaymentStatus.CONFIRMED,
+      paidAt: '2026-07-20T10:30:00.000Z',
+    });
+
+    expect(manager.create).toHaveBeenCalledWith(
+      Payment,
+      expect.objectContaining({
+        paidAt: new Date('2026-07-20T10:30:00.000Z'),
+      }),
+    );
+  });
+
   it('bloquea nuevos pagos si la venta ya no tiene saldo pendiente real', async () => {
     const sale = {
       id: 17,

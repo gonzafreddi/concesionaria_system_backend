@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  IsDateString,
   Min,
 } from 'class-validator';
 import {
@@ -56,4 +57,13 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsEnum(PaymentStatus)
   status?: PaymentStatus;
+
+  @ApiProperty({
+    required: false,
+    description: 'Fecha efectiva del pago. Solo se usa si el pago ingresa confirmado.',
+  })
+  @IsOptional()
+  @IsDateString()
+  paidAt?: string;
 }
+

@@ -40,7 +40,7 @@ export class PaymentsService {
    * El pago respeta el status recibido; si no se envía, inicia PENDING.
    */
   async createPayment(createPaymentDto: CreatePaymentDto): Promise<Payment> {
-    const { saleId, amount, method, notes, currency, status } =
+    const { saleId, amount, method, notes, currency, status, paidAt } =
       createPaymentDto;
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -98,6 +98,7 @@ export class PaymentsService {
         );
       }
 
+      const resolvedPaidAt = this.resolvePaidAt(resolvedStatus, paidAt);
       const payment = queryRunner.manager.create(Payment, {
         sale,
         amount,
@@ -105,7 +106,7 @@ export class PaymentsService {
         notes: notes || null,
         status: resolvedStatus,
         currency,
-        paidAt: resolvedStatus === PaymentStatus.CONFIRMED ? new Date() : null,
+        paidAt: resolvedPaidAt,
       });
       await queryRunner.manager.save(payment);
 
@@ -128,6 +129,24 @@ export class PaymentsService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+
+  private resolvePaidAt(status: PaymentStatus, paidAt?: string): Date | null {
+    if (status !== PaymentStatus.CONFIRMED) {
+      return null;
+    }
+
+    if (!paidAt) {
+      return new Date();
+    }
+
+    const parsedDate = new Date(paidAt);
+    if (isNaN(parsedDate.getTime())) {
+      throw new BadRequestException('Fecha de pago inválida');
+    }
+
+    return parsedDate;
   }
 
   /**

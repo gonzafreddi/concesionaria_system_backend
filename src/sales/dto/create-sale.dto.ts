@@ -78,6 +78,18 @@ export class CreateSaleDto {
   @ApiProperty({
     required: false,
     description:
+      'Campo legado/opcional. La valuación del trade-in se toma del precio de adquisición del vehículo.',
+    example: 8000000,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  tradeInValue?: number;
+
+  @ApiProperty({
+    required: false,
+    description:
       'Descuento aplicado al precio base. Se resta antes de calcular transferencia.',
     example: 1500000,
   })

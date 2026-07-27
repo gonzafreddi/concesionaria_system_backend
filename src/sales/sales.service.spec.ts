@@ -8,7 +8,13 @@ jest.mock('../vehicles/vehicles.service', () => ({
 }));
 
 import { Client } from '../clients/entities/client.entity';
-import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
+import {
+  Currency,
+  Payment,
+  PaymentConcept,
+  PaymentMethod,
+  PaymentStatus,
+} from '../payments/entities/payment.entity';
 import { Quote } from '../quotes/entities/quote.entity';
 import { User } from '../users/entities/user.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
@@ -195,6 +201,7 @@ describe('SalesService', () => {
       paymentsTotal: 0,
       pendingBalance: 85000,
     });
+    jest.spyOn(service, 'findOne').mockResolvedValue({ id: 10 } as Sale);
 
     await service.create({
       clientId: 1,
@@ -264,6 +271,7 @@ describe('SalesService', () => {
       paymentsTotal: 0,
       pendingBalance: 78000,
     });
+    jest.spyOn(service, 'findOne').mockResolvedValue({ id: 10 } as Sale);
 
     await service.create({
       clientId: 1,
@@ -282,6 +290,190 @@ describe('SalesService', () => {
         tradeInValue: 22000,
       }),
     );
+  });
+
+
+  it('crea una venta con seña inicial confirmada en un solo paso', async () => {
+    const availableVehicle = {
+      id: 1,
+      price: 100000,
+      status: VehicleStatus.AVAILABLE,
+      vehiclePlate: 'AAA111',
+    } as Vehicle;
+    const saleEntity = {
+      id: 10,
+      status: SaleStatus.DRAFT,
+      payments: [],
+      tradeIns: [],
+    } as Sale;
+
+    const manager = {
+      findOne: jest.fn().mockImplementation((entity, options) => {
+        if (entity === Vehicle && options.where.id === 1) {
+          return Promise.resolve(availableVehicle);
+        }
+        if (entity === Client) {
+          return Promise.resolve({ id: 1 } as Client);
+        }
+        if (entity === User) {
+          return Promise.resolve({ id: 1 } as User);
+        }
+        if (entity === Consignment) {
+          return Promise.resolve(null);
+        }
+        return Promise.resolve(null);
+      }),
+      create: jest.fn().mockImplementation((entity, payload) => {
+        if (entity === Sale) {
+          return { ...saleEntity, ...payload };
+        }
+        if (entity === Payment) {
+          return { id: 77, ...payload };
+        }
+        return payload;
+      }),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+    };
+
+    dataSource.transaction.mockImplementation(async (callback) =>
+      callback(manager),
+    );
+    saleBalanceCalculatorServiceMock.calculate.mockReturnValue({
+      tradeInsTotal: 0,
+      paymentsTotal: 5000,
+      pendingBalance: 95000,
+    });
+    jest.spyOn(service, 'findOne').mockResolvedValue({ id: 10 } as Sale);
+
+    await service.create({
+      clientId: 1,
+      vehicleId: 1,
+      userId: 1,
+      basePrice: 100000,
+      initialPayments: [
+        {
+          amount: 5000,
+          method: PaymentMethod.CASH,
+          currency: Currency.ARS,
+          status: PaymentStatus.CONFIRMED,
+          concept: PaymentConcept.RESERVATION,
+          paidAt: '2026-07-27T03:40:00.000Z',
+          notes: 'Seña para reservar la unidad',
+        },
+      ],
+    } as any);
+
+    expect(manager.create).toHaveBeenCalledWith(
+      Payment,
+      expect.objectContaining({
+        amount: 5000,
+        status: PaymentStatus.CONFIRMED,
+        concept: PaymentConcept.RESERVATION,
+        notes: 'Seña para reservar la unidad',
+        paidAt: new Date('2026-07-27T03:40:00.000Z'),
+      }),
+    );
+    expect(saleEntity.status).not.toBe(SaleStatus.CONFIRMED);
+    expect(availableVehicle.status).toBe(VehicleStatus.RESERVED);
+  });
+
+  it('crea una venta confirmada con trade-in y complemento de dinero en un solo paso', async () => {
+    const availableVehicle = {
+      id: 1,
+      price: 100000,
+      status: VehicleStatus.AVAILABLE,
+      vehiclePlate: 'AAA111',
+    } as Vehicle;
+    const tradeInVehicle = {
+      id: 2,
+      acquisitionPrice: 40000,
+      status: VehicleStatus.PRESALE,
+      vehiclePlate: 'BBB222',
+    } as Vehicle;
+    const saleEntity = {
+      id: 10,
+      status: SaleStatus.DRAFT,
+      payments: [],
+      tradeIns: [],
+    } as Sale;
+
+    const manager = {
+      findOne: jest.fn().mockImplementation((entity, options) => {
+        if (entity === Vehicle && options.where.id === 1) {
+          return Promise.resolve(availableVehicle);
+        }
+        if (entity === Vehicle && options.where.id === 2) {
+          return Promise.resolve(tradeInVehicle);
+        }
+        if (entity === Client) {
+          return Promise.resolve({ id: 1 } as Client);
+        }
+        if (entity === User) {
+          return Promise.resolve({ id: 1 } as User);
+        }
+        if (entity === TradeIn) {
+          return Promise.resolve(null);
+        }
+        if (entity === Consignment) {
+          return Promise.resolve(null);
+        }
+        return Promise.resolve(null);
+      }),
+      create: jest.fn().mockImplementation((entity, payload) => {
+        if (entity === Sale) {
+          return { ...saleEntity, ...payload };
+        }
+        if (entity === TradeIn) {
+          return { id: 22, ...payload };
+        }
+        if (entity === Payment) {
+          return { id: 88, ...payload };
+        }
+        return payload;
+      }),
+      save: jest.fn().mockImplementation(async (entity) => entity),
+    };
+
+    dataSource.transaction.mockImplementation(async (callback) =>
+      callback(manager),
+    );
+    saleBalanceCalculatorServiceMock.calculate.mockReturnValue({
+      tradeInsTotal: 40000,
+      paymentsTotal: 60000,
+      pendingBalance: 0,
+    });
+    jest.spyOn(service, 'findOne').mockResolvedValue({ id: 10 } as Sale);
+
+    await service.create({
+      clientId: 1,
+      vehicleId: 1,
+      userId: 1,
+      basePrice: 100000,
+      tradeIns: 2,
+      initialPayments: [
+        {
+          amount: 60000,
+          method: PaymentMethod.BANK_TRANSFER,
+          currency: Currency.ARS,
+          status: PaymentStatus.CONFIRMED,
+          concept: PaymentConcept.TRADE_COMPLEMENT,
+          notes: 'Complemento junto a usado',
+        },
+      ],
+    } as any);
+
+    expect(manager.create).toHaveBeenCalledWith(
+      TradeIn,
+      expect.objectContaining({ tradeInValue: 40000 }),
+    );
+    expect(manager.create).toHaveBeenCalledWith(
+      Payment,
+      expect.objectContaining({
+        amount: 60000,
+        concept: PaymentConcept.TRADE_COMPLEMENT,
+      }),
+    );
+    expect(availableVehicle.status).toBe(VehicleStatus.SOLD);
   });
 
   it('marca la consignacion como RESERVED cuando se crea una venta para un vehiculo consignado', async () => {
@@ -344,6 +536,7 @@ describe('SalesService', () => {
       paymentsTotal: 0,
       pendingBalance: 100000,
     });
+    jest.spyOn(service, 'findOne').mockResolvedValue({ id: 10 } as Sale);
 
     await service.create({
       clientId: 1,

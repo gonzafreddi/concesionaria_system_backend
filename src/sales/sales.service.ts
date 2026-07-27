@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource, In, EntityManager } from 'typeorm';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { UpdateSaleDto } from './dto/update-sale.dto';
 import { CreateTradeInDto } from './dto/create-trade-in.dto';
@@ -25,7 +25,11 @@ import {
   VehicleStatus,
 } from '../vehicles/entities/vehicle.entity';
 import { User } from '../users/entities/user.entity';
-import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
+import {
+  Payment,
+  PaymentConcept,
+  PaymentStatus,
+} from '../payments/entities/payment.entity';
 import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import { VehiclesService } from '../vehicles/vehicles.service';
 import { SaleAccountBalanceService } from './sale-account-balance.service';
@@ -94,9 +98,10 @@ export class SalesService {
       tradeIns,
       transferPercentage,
       adminExpenses,
+      initialPayments,
     } = createSaleDto;
 
-    return this.dataSource.transaction(async (manager) => {
+    const saleId = await this.dataSource.transaction(async (manager) => {
       // 🔒 Buscar vehículo principal
       const vehicle = await manager.findOne(Vehicle, {
         where: { id: vehicleId },
@@ -246,8 +251,6 @@ export class SalesService {
 
         await manager.save(tradeIn);
         sale.tradeIns = [tradeIn];
-        sale.status = this.calculateSaleStatus(sale);
-        await manager.save(sale);
 
         // Respetar el estado previo del vehículo recibido como parte de pago.
         // Solo se asigna INSPECTION si no tiene un estado definido.
@@ -256,10 +259,22 @@ export class SalesService {
           tradeInVehicle.status = VehicleStatus.INSPECTION;
         }
         await manager.save(tradeInVehicle);
+      } else {
+        sale.tradeIns = [];
       }
 
+      const initialSalePayments = await this.createInitialPayments(
+        sale,
+        initialPayments ?? [],
+        manager,
+      );
+      sale.payments = initialSalePayments;
+      sale.totalPaid = this.getConfirmedPaymentsTotal(initialSalePayments);
+      sale.status = this.calculateSaleStatus(sale);
+      await manager.save(sale);
+
       // 🚗 Reservar vehículo principal
-      // Si la operación nace ya cubierta por trade-in, el vehículo sale vendido.
+      // Si la operación nace ya cubierta por trade-in/pagos, el vehículo sale vendido.
       vehicle.status =
         sale.status === SaleStatus.CONFIRMED
           ? VehicleStatus.SOLD
@@ -267,8 +282,10 @@ export class SalesService {
       await manager.save(vehicle);
       await this.syncConsignmentStatusWithVehicleStatus(vehicle, manager);
 
-      return sale;
+      return sale.id;
     });
+
+    return this.findOne(saleId);
   }
 
   /**
@@ -842,6 +859,71 @@ export class SalesService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+
+  private async createInitialPayments(
+    sale: Sale,
+    initialPayments: NonNullable<CreateSaleDto['initialPayments']>,
+    manager: EntityManager,
+  ): Promise<Payment[]> {
+    const payments: Payment[] = [];
+
+    for (const initialPayment of initialPayments) {
+      const resolvedStatus = initialPayment.status ?? PaymentStatus.PENDING;
+      const confirmedPaymentsTotal = this.getConfirmedPaymentsTotal(payments);
+      const tradeInsTotal = this.getTradeInsTotal(sale.tradeIns);
+      const nextCoveredAmount =
+        tradeInsTotal +
+        confirmedPaymentsTotal +
+        (resolvedStatus === PaymentStatus.CONFIRMED
+          ? Number(initialPayment.amount)
+          : 0);
+
+      if (nextCoveredAmount > Number(sale.finalPrice)) {
+        throw new BadRequestException(
+          'El monto de los pagos iniciales excede el saldo pendiente',
+        );
+      }
+
+      const payment = manager.create(Payment, {
+        sale,
+        amount: initialPayment.amount,
+        method: initialPayment.method,
+        currency: initialPayment.currency,
+        status: resolvedStatus,
+        concept: initialPayment.concept ?? PaymentConcept.PARTIAL_PAYMENT,
+        notes: initialPayment.notes ?? null,
+        paidAt: this.resolvePaymentPaidAt(resolvedStatus, initialPayment.paidAt),
+      });
+
+      payments.push(await manager.save(payment));
+    }
+
+    return payments;
+  }
+
+  private getConfirmedPaymentsTotal(payments: Payment[] = []): number {
+    return payments
+      .filter((payment) => payment.status === PaymentStatus.CONFIRMED)
+      .reduce((total, payment) => total + Number(payment.amount ?? 0), 0);
+  }
+
+  private resolvePaymentPaidAt(status: PaymentStatus, paidAt?: string): Date | null {
+    if (status !== PaymentStatus.CONFIRMED) {
+      return null;
+    }
+
+    if (!paidAt) {
+      return new Date();
+    }
+
+    const parsedDate = new Date(paidAt);
+    if (isNaN(parsedDate.getTime())) {
+      throw new BadRequestException('Fecha de pago inválida');
+    }
+
+    return parsedDate;
   }
 
   private getTradeInsTotal(tradeIns: TradeIn[] = []): number {

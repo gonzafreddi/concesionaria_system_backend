@@ -12,6 +12,7 @@ import {
   Currency,
   PaymentMethod,
   PaymentStatus,
+  PaymentConcept,
 } from '../entities/payment.entity';
 import { Transform } from 'class-transformer';
 
@@ -48,6 +49,11 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiProperty({ required: false, enum: PaymentConcept })
+  @IsOptional()
+  @IsEnum(PaymentConcept)
+  concept?: PaymentConcept;
 
   @ApiProperty({ required: true, enum: Currency })
   @IsEnum(Currency)

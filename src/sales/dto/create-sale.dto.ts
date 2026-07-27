@@ -7,8 +7,54 @@ import {
   IsPositive,
   Min,
   Max,
+  IsArray,
+  ValidateNested,
+  IsEnum,
+  IsString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  Currency,
+  PaymentConcept,
+  PaymentMethod,
+  PaymentStatus,
+} from '../../payments/entities/payment.entity';
+
+export class CreateInitialPaymentDto {
+  @ApiProperty({ example: 500000 })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.01)
+  amount: number;
+
+  @ApiProperty({ enum: PaymentMethod })
+  @IsEnum(PaymentMethod)
+  method: PaymentMethod;
+
+  @ApiProperty({ enum: Currency })
+  @IsEnum(Currency)
+  currency: Currency;
+
+  @ApiProperty({ required: false, enum: PaymentStatus })
+  @IsOptional()
+  @IsEnum(PaymentStatus)
+  status?: PaymentStatus;
+
+  @ApiProperty({ required: false, enum: PaymentConcept })
+  @IsOptional()
+  @IsEnum(PaymentConcept)
+  concept?: PaymentConcept;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsDateString()
+  paidAt?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
 
 export class CreateSaleDto {
   @ApiProperty({
@@ -122,4 +168,17 @@ export class CreateSaleDto {
   @IsNumber()
   @Min(0)
   adminExpenses?: number;
+
+  @ApiProperty({
+    required: false,
+    type: CreateInitialPaymentDto,
+    isArray: true,
+    description: 'Pagos iniciales cargados al crear la venta: seña, contado, entrega inicial, etc.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateInitialPaymentDto)
+  initialPayments?: CreateInitialPaymentDto[];
 }
+

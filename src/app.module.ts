@@ -20,6 +20,7 @@ import { ConsignmentModule } from './consignment/consignment.module';
 import { LoggerMiddleware } from './logger/logger.middleware';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { VehicleImagesModule } from './vehicle-images/vehicle-images.module';
+import { VehicleExpensesModule } from './vehicle-expenses/vehicle-expenses.module';
 import {
   getDatabaseConfig,
   shouldSynchronizeSchema,
@@ -49,6 +50,7 @@ import {
     ConsignmentModule,
     CloudinaryModule,
     VehicleImagesModule,
+    VehicleExpensesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

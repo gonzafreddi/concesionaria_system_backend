@@ -47,6 +47,15 @@ export enum Currency {
   EUR = 'EUR',
 }
 
+export enum PaymentConcept {
+  RESERVATION = 'RESERVATION',
+  DOWN_PAYMENT = 'DOWN_PAYMENT',
+  PARTIAL_PAYMENT = 'PARTIAL_PAYMENT',
+  FULL_PAYMENT = 'FULL_PAYMENT',
+  TRADE_COMPLEMENT = 'TRADE_COMPLEMENT',
+  OTHER = 'OTHER',
+}
+
 @Entity('payments')
 export class Payment {
   @PrimaryGeneratedColumn()
@@ -74,6 +83,13 @@ export class Payment {
 
   @Column({ type: 'enum', enum: Currency })
   currency: Currency;
+
+  @Column({
+    type: 'enum',
+    enum: PaymentConcept,
+    default: PaymentConcept.PARTIAL_PAYMENT,
+  })
+  concept: PaymentConcept;
 
   @Column({ name: 'paid_at', type: 'timestamp', nullable: true })
   paidAt: Date | null;

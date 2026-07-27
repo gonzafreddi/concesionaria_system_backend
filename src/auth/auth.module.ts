@@ -9,6 +9,7 @@ import { AuthGuard } from './auth.guard';
 import { User } from '../users/entities/user.entity';
 import { UsersModule } from '../users/users.module';
 import { RolesGuard } from './roles.guard';
+import { getJwtSecret } from '../config/environment';
 
 /**
  * Módulo de autenticación
@@ -19,7 +20,7 @@ import { RolesGuard } from './roles.guard';
     UsersModule,
     TypeOrmModule.forFeature([User]),
     JwtModule.register({
-      secret: process.env.JWT_SECRET,
+      secret: getJwtSecret(),
       signOptions: {
         expiresIn: '1d',
       },

@@ -115,7 +115,7 @@ describe('VehiclesService', () => {
 
     expect(repositoryMock.findOne).toHaveBeenCalledWith({
       where: { id: 7 },
-      relations: ['purchases'],
+      relations: ['purchases', 'images'],
     });
     expect(result.purchaseDate).toBe('2026-03-24T15:30:00.000Z');
     expect(result.mileage).toBe(87500);
@@ -165,7 +165,7 @@ describe('VehiclesService', () => {
     const result = await service.findAll();
 
     expect(repositoryMock.find).toHaveBeenCalledWith({
-      relations: ['purchases', 'consignments', 'tradeIns', 'tradeIns.sale'],
+      relations: ['purchases', 'consignments', 'tradeIns', 'tradeIns.sale', 'images'],
       order: { id: 'DESC' },
     });
     expect(result).toEqual([
@@ -175,16 +175,19 @@ describe('VehiclesService', () => {
         entryType: VehicleEntryType.DIRECT_PURCHASE,
         mileage: 100000,
         technicalSpecifications: '1.4 nafta',
+        images: [],
       },
       {
         id: 13,
         vehiclePlate: 'AC456EF',
         entryType: VehicleEntryType.CONSIGNMENT,
+        images: [],
       },
       {
         id: 14,
         vehiclePlate: 'AD789GH',
         entryType: VehicleEntryType.TRADE_IN,
+        images: [],
       },
     ]);
   });

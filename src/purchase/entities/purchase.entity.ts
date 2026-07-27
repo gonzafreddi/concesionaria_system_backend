@@ -6,13 +6,11 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Client } from '../../clients/entities/client.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
-import { Document } from '../../documents/entities/document.entity';
 
 /**
  * Estados de la operación de compra del vehículo.
@@ -33,8 +31,7 @@ export enum PurchaseStatus {
  * Purchase Entity
  *
  * Representa la compra de un vehículo por parte de la concesionaria.
- * Se vincula al cliente vendedor, al vehículo incorporado y a los documentos
- * generados o adjuntados para la operación.
+ * Se vincula al cliente vendedor y al vehículo incorporado para la operación.
  */
 @Entity('purchases')
 export class Purchase {
@@ -108,8 +105,4 @@ export class Purchase {
   })
   @JoinColumn({ name: 'vehicle_id' })
   vehicle: Vehicle;
-
-  // Documentación asociada a la compra.
-  @OneToMany(() => Document, (document) => document.purchase)
-  documents: Document[];
 }

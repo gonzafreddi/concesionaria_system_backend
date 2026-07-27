@@ -7,10 +7,16 @@ import { Vehicle } from './entities/vehicle.entity';
 import { VehicleAcquisitionTypes } from './entities/vehicle_acquisition_types';
 import { VehicleAcquisitionService } from './vechicle_acquisition.service';
 import { Inspection } from '../inspections/entities/inspection.entity';
+import { VehicleImage } from '../vehicle-images/entities/vehicle-image.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Vehicle, VehicleAcquisitionTypes, Inspection]),
+    TypeOrmModule.forFeature([
+      Vehicle,
+      VehicleAcquisitionTypes,
+      Inspection,
+      VehicleImage,
+    ]),
   ],
   controllers: [VehiclesController, VehicleAcquisitionController],
   providers: [VehiclesService, VehicleAcquisitionService],

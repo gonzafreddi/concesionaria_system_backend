@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner, In } from 'typeorm';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { Payment, PaymentStatus } from './entities/payment.entity';
+import { Payment, PaymentConcept, PaymentStatus } from './entities/payment.entity';
 import { Sale, SaleStatus } from '../sales/entities/sale.entity';
 import { SaleBalanceCalculatorService } from '../sales/sale-balance-calculator.service';
 import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
@@ -40,7 +40,7 @@ export class PaymentsService {
    * El pago respeta el status recibido; si no se envía, inicia PENDING.
    */
   async createPayment(createPaymentDto: CreatePaymentDto): Promise<Payment> {
-    const { saleId, amount, method, notes, currency, status } =
+    const { saleId, amount, method, notes, currency, status, paidAt, concept } =
       createPaymentDto;
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -98,6 +98,7 @@ export class PaymentsService {
         );
       }
 
+      const resolvedPaidAt = this.resolvePaidAt(resolvedStatus, paidAt);
       const payment = queryRunner.manager.create(Payment, {
         sale,
         amount,
@@ -105,7 +106,8 @@ export class PaymentsService {
         notes: notes || null,
         status: resolvedStatus,
         currency,
-        paidAt: resolvedStatus === PaymentStatus.CONFIRMED ? new Date() : null,
+        concept: concept ?? PaymentConcept.PARTIAL_PAYMENT,
+        paidAt: resolvedPaidAt,
       });
       await queryRunner.manager.save(payment);
 
@@ -128,6 +130,24 @@ export class PaymentsService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+
+  private resolvePaidAt(status: PaymentStatus, paidAt?: string): Date | null {
+    if (status !== PaymentStatus.CONFIRMED) {
+      return null;
+    }
+
+    if (!paidAt) {
+      return new Date();
+    }
+
+    const parsedDate = new Date(paidAt);
+    if (isNaN(parsedDate.getTime())) {
+      throw new BadRequestException('Fecha de pago inválida');
+    }
+
+    return parsedDate;
   }
 
   /**

@@ -1,9 +1,16 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ClassSerializerInterceptor, Logger, ValidationPipe } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  Logger,
+  ValidationPipe,
+} from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { HttpExceptionFilter } from './http-exception/http-exception.filter';
+import { parsePort, validateRequiredEnvironment } from './config/environment';
 
 async function bootstrap() {
+  validateRequiredEnvironment();
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
   const corsOrigins = process.env.CORS_ORIGINS
@@ -13,7 +20,14 @@ async function bootstrap() {
     : [];
   const enableSwagger = process.env.ENABLE_SWAGGER === 'true';
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      forbidNonWhitelisted: true,
+      transform: true,
+      whitelist: true,
+    }),
+  );
+  app.useGlobalFilters(new HttpExceptionFilter());
   app.enableCors({
     origin: corsOrigins.length > 0 ? corsOrigins : false,
     credentials: true,
@@ -24,6 +38,7 @@ async function bootstrap() {
       .setTitle('Concesionaria API')
       .setDescription('API documentation')
       .setVersion('1.0')
+      .addBearerAuth()
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);
@@ -31,7 +46,7 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
-  const port = Number(process.env.PORT) || 3001;
+  const port = process.env.PORT ? parsePort(process.env.PORT) : 3001;
   logger.log(`Starting Nest application on port ${port}`);
   await app.listen(port, '0.0.0.0');
   logger.log(`Nest application started and listening on port ${port}`);

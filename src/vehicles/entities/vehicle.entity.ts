@@ -20,6 +20,8 @@ import { Purchase } from '../../purchase/entities/purchase.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { Consignment } from '../../consignment/entities/consignment.entity';
 import { TradeIn } from '../../sales/entities/trade-in.entity';
+import { VehicleImage } from '../../vehicle-images/entities/vehicle-image.entity';
+import { VehicleExpense } from '../../vehicle-expenses/entities/vehicle-expense.entity';
 export enum VehicleType {
   NEW = 'NEW',
   USED = 'USED',
@@ -152,4 +154,11 @@ export class Vehicle {
 
   @OneToMany(() => Purchase, (purchase) => purchase.vehicle)
   purchases: Purchase[];
+
+  @OneToMany(() => VehicleImage, (vehicleImage) => vehicleImage.vehicle)
+  images: VehicleImage[];
+
+  @OneToMany(() => VehicleExpense, (vehicleExpense) => vehicleExpense.vehicle)
+  expenses: VehicleExpense[];
 }
+

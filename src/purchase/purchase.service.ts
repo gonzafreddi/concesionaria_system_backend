@@ -14,8 +14,11 @@ import {
   VehicleEntryType,
   VehicleStatus,
 } from '../vehicles/entities/vehicle.entity';
-import { Document } from '../documents/entities/document.entity';
 import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
+import {
+  GeneratedDocument,
+  RelatedEntityType,
+} from '../documents/entities/generated-document.entity';
 
 @Injectable()
 export class PurchaseService {
@@ -26,8 +29,8 @@ export class PurchaseService {
     private readonly clientRepository: Repository<Client>,
     @InjectRepository(Vehicle)
     private readonly vehicleRepository: Repository<Vehicle>,
-    @InjectRepository(Document)
-    private readonly documentRepository: Repository<Document>,
+    @InjectRepository(GeneratedDocument)
+    private readonly documentRepository: Repository<GeneratedDocument>,
     @InjectRepository(Consignment)
     private readonly consignmentRepository: Repository<Consignment>,
   ) {}
@@ -139,7 +142,7 @@ export class PurchaseService {
    */
   findAll(): Promise<Purchase[]> {
     return this.purchaseRepository.find({
-      relations: ['client', 'vehicle', 'documents'],
+      relations: ['client', 'vehicle'],
       order: { createdAt: 'DESC', id: 'DESC' },
     });
   }
@@ -150,7 +153,7 @@ export class PurchaseService {
   async findOne(id: number): Promise<Purchase> {
     const purchase = await this.purchaseRepository.findOne({
       where: { id },
-      relations: ['client', 'vehicle', 'documents'],
+      relations: ['client', 'vehicle'],
     });
 
     if (!purchase) {
@@ -272,7 +275,10 @@ export class PurchaseService {
     const purchase = await this.findOne(id);
 
     const relatedDocuments = await this.documentRepository.count({
-      where: { purchaseId: id },
+      where: {
+        relatedEntityType: RelatedEntityType.PURCHASE,
+        relatedEntityId: String(id),
+      },
     });
 
     if (relatedDocuments > 0) {

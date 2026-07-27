@@ -5,12 +5,14 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  IsDateString,
   Min,
 } from 'class-validator';
 import {
   Currency,
   PaymentMethod,
   PaymentStatus,
+  PaymentConcept,
 } from '../entities/payment.entity';
 import { Transform } from 'class-transformer';
 
@@ -48,6 +50,11 @@ export class CreatePaymentDto {
   @IsString()
   notes?: string;
 
+  @ApiProperty({ required: false, enum: PaymentConcept })
+  @IsOptional()
+  @IsEnum(PaymentConcept)
+  concept?: PaymentConcept;
+
   @ApiProperty({ required: true, enum: Currency })
   @IsEnum(Currency)
   currency: Currency;
@@ -56,4 +63,13 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsEnum(PaymentStatus)
   status?: PaymentStatus;
+
+  @ApiProperty({
+    required: false,
+    description: 'Fecha efectiva del pago. Solo se usa si el pago ingresa confirmado.',
+  })
+  @IsOptional()
+  @IsDateString()
+  paidAt?: string;
 }
+

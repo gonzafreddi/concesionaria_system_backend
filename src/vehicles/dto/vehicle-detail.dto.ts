@@ -4,6 +4,7 @@ import {
   VehicleStatus,
   VehicleType,
 } from '../entities/vehicle.entity';
+import { VehicleImageSummaryDto } from './vehicle-image-summary.dto';
 
 export class VehicleDetailDto {
   @ApiProperty({ example: 12 })
@@ -65,4 +66,11 @@ export class VehicleDetailDto {
 
   @ApiPropertyOptional({ example: 15, nullable: true })
   ownerClientId: number | null;
+
+  @ApiProperty({
+    type: VehicleImageSummaryDto,
+    isArray: true,
+    example: [],
+  })
+  images: VehicleImageSummaryDto[];
 }

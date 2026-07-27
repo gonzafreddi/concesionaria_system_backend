@@ -1,70 +1,70 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateDocumentDto } from './dto/create-document.dto';
-import { UpdateDocumentDto } from './dto/update-document.dto';
-import { Document, DocumentStatus } from './entities/document.entity';
-import { Sale } from '../sales/entities/sale.entity';
-import { Vehicle } from '../vehicles/entities/vehicle.entity';
-import { Payment } from '../payments/entities/payment.entity';
-import { Client } from '../clients/entities/client.entity';
-import { Purchase } from '../purchase/entities/purchase.entity';
+import { randomUUID } from 'crypto';
+import { CreateGeneratedDocumentDto } from './dto/create-generated-document.dto';
+import { FindGeneratedDocumentsQueryDto } from './dto/find-generated-documents-query.dto';
+import {
+  DocumentStatus,
+  GeneratedDocument,
+  RelatedEntityType,
+} from './entities/generated-document.entity';
+
+const ALLOWED_MIME_TYPES = ['application/pdf'];
+const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
 
 @Injectable()
-export class DocumentsService {
+export class GeneratedDocumentsService {
   constructor(
-    @InjectRepository(Document)
-    private readonly documentsRepository: Repository<Document>,
-    @InjectRepository(Sale)
-    private readonly salesRepository: Repository<Sale>,
-    @InjectRepository(Purchase)
-    private readonly purchasesRepository: Repository<Purchase>,
-    @InjectRepository(Vehicle)
-    private readonly vehiclesRepository: Repository<Vehicle>,
-    @InjectRepository(Payment)
-    private readonly paymentsRepository: Repository<Payment>,
-    @InjectRepository(Client)
-    private readonly clientsRepository: Repository<Client>,
+    @InjectRepository(GeneratedDocument)
+    private readonly documentsRepository: Repository<GeneratedDocument>,
   ) {}
 
-  /**
-   * Crea un documento nuevo validando previamente las referencias opcionales.
-   */
-  async create(createDocumentDto: CreateDocumentDto): Promise<Document> {
-    await this.validateReferences(createDocumentDto);
+  async uploadDocument(
+    file: Express.Multer.File,
+    createDto: CreateGeneratedDocumentDto,
+    generatedById: string | null,
+  ): Promise<GeneratedDocument> {
+    this.validateFile(file);
+    const documentId = randomUUID();
 
     const document = this.documentsRepository.create({
-      type: createDocumentDto.type,
-      status: createDocumentDto.status ?? DocumentStatus.DRAFT,
-      title: createDocumentDto.title,
-      purchaseId: createDocumentDto.purchaseId ?? null,
-      saleId: createDocumentDto.saleId ?? null,
-      vehicleId: createDocumentDto.vehicleId ?? null,
-      paymentId: createDocumentDto.paymentId ?? null,
-      clientId: createDocumentDto.clientId ?? null,
-      pdfData: Buffer.from(createDocumentDto.pdfData, 'base64'),
-      signedPdfData: createDocumentDto.signedPdfData
-        ? Buffer.from(createDocumentDto.signedPdfData, 'base64')
-        : null,
-      dataSnapshotJson: createDocumentDto.dataSnapshotJson ?? null,
+      id: documentId,
+      templateCode: createDto.templateCode,
+      documentType: createDto.documentType,
+      relatedEntityType: createDto.relatedEntityType,
+      relatedEntityId: createDto.relatedEntityId,
+      fileUrl: `/documents/${documentId}/file`,
+      filePublicId: null,
+      fileData: file.buffer,
+      originalFileName: file.originalname,
+      mimeType: file.mimetype,
+      size: file.size,
+      status: createDto.status ?? DocumentStatus.GENERATED,
+      generatedById,
     });
 
     return this.documentsRepository.save(document);
   }
 
-  /**
-   * Devuelve todos los documentos ordenados por fecha de creación descendente.
-   */
-  findAll(): Promise<Document[]> {
+  findAll(query: FindGeneratedDocumentsQueryDto): Promise<GeneratedDocument[]> {
     return this.documentsRepository.find({
+      where: {
+        templateCode: query.templateCode,
+        documentType: query.documentType,
+        relatedEntityType: query.relatedEntityType,
+        relatedEntityId: query.relatedEntityId,
+        status: query.status,
+      },
       order: { createdAt: 'DESC', id: 'DESC' },
     });
   }
 
-  /**
-   * Busca un documento puntual por ID.
-   */
-  async findOne(id: number): Promise<Document> {
+  async findOne(id: string): Promise<GeneratedDocument> {
     const document = await this.documentsRepository.findOne({ where: { id } });
 
     if (!document) {
@@ -74,126 +74,61 @@ export class DocumentsService {
     return document;
   }
 
-  /**
-   * Actualiza parcialmente un documento existente.
-   */
-  async update(
-    id: number,
-    updateDocumentDto: UpdateDocumentDto,
-  ): Promise<Document> {
-    const document = await this.findOne(id);
-    await this.validateReferences(updateDocumentDto);
+  async getFile(id: string): Promise<GeneratedDocument> {
+    const document = await this.documentsRepository
+      .createQueryBuilder('document')
+      .addSelect('document.fileData')
+      .where('document.id = :id', { id })
+      .getOne();
 
-    Object.assign(document, {
-      ...updateDocumentDto,
-      purchaseId:
-        updateDocumentDto.purchaseId === undefined
-          ? document.purchaseId
-          : updateDocumentDto.purchaseId,
-      saleId:
-        updateDocumentDto.saleId === undefined
-          ? document.saleId
-          : updateDocumentDto.saleId,
-      vehicleId:
-        updateDocumentDto.vehicleId === undefined
-          ? document.vehicleId
-          : updateDocumentDto.vehicleId,
-      paymentId:
-        updateDocumentDto.paymentId === undefined
-          ? document.paymentId
-          : updateDocumentDto.paymentId,
-      clientId:
-        updateDocumentDto.clientId === undefined
-          ? document.clientId
-          : updateDocumentDto.clientId,
-      pdfData:
-        updateDocumentDto.pdfData === undefined
-          ? document.pdfData
-          : Buffer.from(updateDocumentDto.pdfData, 'base64'),
-      signedPdfData:
-        updateDocumentDto.signedPdfData === undefined
-          ? document.signedPdfData
-          : updateDocumentDto.signedPdfData
-            ? Buffer.from(updateDocumentDto.signedPdfData, 'base64')
-            : null,
-      dataSnapshotJson:
-        updateDocumentDto.dataSnapshotJson === undefined
-          ? document.dataSnapshotJson
-          : updateDocumentDto.dataSnapshotJson,
-    });
+    if (!document) {
+      throw new NotFoundException(`Documento ${id} no encontrado`);
+    }
 
-    return this.documentsRepository.save(document);
+    return document;
   }
 
-  /**
-   * Elimina un documento existente.
-   */
-  async remove(id: number): Promise<{ deleted: true }> {
+  async findByEntity(
+    relatedEntityType: RelatedEntityType,
+    relatedEntityId: string,
+  ): Promise<GeneratedDocument[]> {
+    return this.documentsRepository.find({
+      where: { relatedEntityType, relatedEntityId },
+      order: { createdAt: 'DESC', id: 'DESC' },
+    });
+  }
+
+  async remove(id: string): Promise<{ deleted: true }> {
     const document = await this.findOne(id);
+
     await this.documentsRepository.remove(document);
     return { deleted: true };
   }
 
-  /**
-   * Valida que las referencias opcionales apunten a registros existentes.
-   */
-  private async validateReferences(
-    documentDto: Partial<CreateDocumentDto>,
-  ): Promise<void> {
-    if (documentDto.saleId !== undefined && documentDto.saleId !== null) {
-      const sale = await this.salesRepository.findOne({
-        where: { id: documentDto.saleId },
-      });
-      if (!sale) {
-        throw new NotFoundException(
-          `Venta ${documentDto.saleId} no encontrada`,
-        );
-      }
+  private validateFile(file?: Express.Multer.File): void {
+    if (!file) {
+      throw new BadRequestException(
+        'Debés enviar un archivo PDF en el campo file',
+      );
     }
 
-    if (
-      documentDto.purchaseId !== undefined &&
-      documentDto.purchaseId !== null
-    ) {
-      const purchase = await this.purchasesRepository.findOne({
-        where: { id: documentDto.purchaseId },
-      });
-      if (!purchase) {
-        throw new NotFoundException(
-          `Compra ${documentDto.purchaseId} no encontrada`,
-        );
-      }
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(
+        `Tipo de archivo no permitido: ${file.mimetype}`,
+      );
     }
 
-    if (documentDto.vehicleId !== undefined && documentDto.vehicleId !== null) {
-      const vehicle = await this.vehiclesRepository.findOne({
-        where: { id: documentDto.vehicleId },
-      });
-      if (!vehicle) {
-        throw new NotFoundException(
-          `Vehículo ${documentDto.vehicleId} no encontrado`,
-        );
-      }
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      throw new BadRequestException(
+        'El archivo supera el máximo permitido de 15MB',
+      );
     }
 
-    if (documentDto.paymentId !== undefined && documentDto.paymentId !== null) {
-      const payment = await this.paymentsRepository.findOne({
-        where: { id: documentDto.paymentId },
-      });
-      if (!payment) {
-        throw new NotFoundException(`Pago ${documentDto.paymentId} no encontrado`);
-      }
-    }
-
-    if (documentDto.clientId !== undefined && documentDto.clientId !== null) {
-      const client = await this.clientsRepository.findOne({
-        where: { id: documentDto.clientId },
-      });
-      if (!client) {
-        throw new NotFoundException(
-          `Cliente ${documentDto.clientId} no encontrado`,
-        );
-      }
+    const header = file.buffer.subarray(0, 1024).toString('latin1');
+    if (!header.includes('%PDF-')) {
+      throw new BadRequestException(
+        'El contenido del archivo no corresponde a un PDF válido',
+      );
     }
   }
 }

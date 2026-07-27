@@ -14,6 +14,7 @@ import { VehicleDetailDto } from './dto/vehicle-detail.dto';
 import { PurchaseStatus } from '../purchase/entities/purchase.entity';
 import { ConsignmentStatus } from '../consignment/entities/consignment.entity';
 import { SaleStatus } from '../sales/entities/sale.entity';
+import { VehicleImage } from '../vehicle-images/entities/vehicle-image.entity';
 
 @Injectable()
 export class VehiclesService {
@@ -84,7 +85,20 @@ export class VehiclesService {
       status: vehicle.status,
       entryType: vehicle.entryType,
       ownerClientId: vehicle.ownerClientId ?? null,
+      images: this.sortVehicleImages(vehicle.images).map((image) => ({
+        id: image.id,
+        url: image.url,
+        publicId: image.publicId,
+        isCover: image.isCover,
+        order: image.order,
+        createdAt: image.createdAt,
+        updatedAt: image.updatedAt,
+      })),
     };
+  }
+
+  private sortVehicleImages(images?: VehicleImage[]): VehicleImage[] {
+    return [...(images ?? [])].sort((a, b) => a.order - b.order || a.id - b.id);
   }
 
   private mapToVehicleSaleOption(vehicle: Vehicle): VehicleSaleOptionDto {
@@ -118,17 +132,26 @@ export class VehiclesService {
 
   async findAll() {
     const vehicles = await this.vehiclesRepository.find({
-      relations: ['purchases', 'consignments', 'tradeIns', 'tradeIns.sale'],
+      relations: [
+        'purchases',
+        'consignments',
+        'tradeIns',
+        'tradeIns.sale',
+        'images',
+      ],
       order: { id: 'DESC' },
     });
 
     return vehicles
       .filter((vehicle) => this.hasInventoryAcquisition(vehicle))
-      .map(({ purchases, consignments, tradeIns, ...vehicle }) => vehicle);
+      .map(({ purchases, consignments, tradeIns, ...vehicle }) => ({
+        ...vehicle,
+        images: this.sortVehicleImages(vehicle.images),
+      }));
   }
 
   async findOne(id: number): Promise<VehicleDetailDto> {
-    const vehicle = await this.getVehicleEntityById(id, ['purchases']);
+    const vehicle = await this.getVehicleEntityById(id, ['purchases', 'images']);
     return this.mapToVehicleDetail(vehicle);
   }
 

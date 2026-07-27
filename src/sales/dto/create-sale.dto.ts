@@ -7,8 +7,54 @@ import {
   IsPositive,
   Min,
   Max,
+  IsArray,
+  ValidateNested,
+  IsEnum,
+  IsString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  Currency,
+  PaymentConcept,
+  PaymentMethod,
+  PaymentStatus,
+} from '../../payments/entities/payment.entity';
+
+export class CreateInitialPaymentDto {
+  @ApiProperty({ example: 500000 })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0.01)
+  amount: number;
+
+  @ApiProperty({ enum: PaymentMethod })
+  @IsEnum(PaymentMethod)
+  method: PaymentMethod;
+
+  @ApiProperty({ enum: Currency })
+  @IsEnum(Currency)
+  currency: Currency;
+
+  @ApiProperty({ required: false, enum: PaymentStatus })
+  @IsOptional()
+  @IsEnum(PaymentStatus)
+  status?: PaymentStatus;
+
+  @ApiProperty({ required: false, enum: PaymentConcept })
+  @IsOptional()
+  @IsEnum(PaymentConcept)
+  concept?: PaymentConcept;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsDateString()
+  paidAt?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
 
 export class CreateSaleDto {
   @ApiProperty({
@@ -78,6 +124,18 @@ export class CreateSaleDto {
   @ApiProperty({
     required: false,
     description:
+      'Campo legado/opcional. La valuación del trade-in se toma del precio de adquisición del vehículo.',
+    example: 8000000,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  tradeInValue?: number;
+
+  @ApiProperty({
+    required: false,
+    description:
       'Descuento aplicado al precio base. Se resta antes de calcular transferencia.',
     example: 1500000,
   })
@@ -110,4 +168,17 @@ export class CreateSaleDto {
   @IsNumber()
   @Min(0)
   adminExpenses?: number;
+
+  @ApiProperty({
+    required: false,
+    type: CreateInitialPaymentDto,
+    isArray: true,
+    description: 'Pagos iniciales cargados al crear la venta: seña, contado, entrega inicial, etc.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateInitialPaymentDto)
+  initialPayments?: CreateInitialPaymentDto[];
 }
+

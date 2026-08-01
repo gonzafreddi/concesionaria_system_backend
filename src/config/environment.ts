@@ -1,4 +1,4 @@
-type NodeEnv = 'development' | 'test' | 'production' | string;
+type NodeEnv = string;
 
 export function getNodeEnv(): NodeEnv {
   return process.env.NODE_ENV || 'development';
@@ -54,6 +54,23 @@ export function shouldSynchronizeSchema(): boolean {
   return process.env.TYPEORM_SYNCHRONIZE === 'true';
 }
 
+export function parseBoolean(value: string | undefined, defaultValue: boolean) {
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  return value === 'true';
+}
+
+export function getMailConfig() {
+  return {
+    enabled: parseBoolean(process.env.MAIL_ENABLED, false),
+    apiKey: process.env.RESEND_API_KEY,
+    from:
+      process.env.RESEND_FROM_EMAIL || 'Concesionaria <no-reply@example.com>',
+  };
+}
+
 export function validateRequiredEnvironment(): void {
   requireEnv('JWT_SECRET');
 
@@ -67,6 +84,11 @@ export function validateRequiredEnvironment(): void {
     requireEnv('CLOUDINARY_CLOUD_NAME');
     requireEnv('CLOUDINARY_API_KEY');
     requireEnv('CLOUDINARY_API_SECRET');
+
+    if (parseBoolean(process.env.MAIL_ENABLED, false)) {
+      requireEnv('RESEND_API_KEY');
+      requireEnv('RESEND_FROM_EMAIL');
+    }
   }
 }
 

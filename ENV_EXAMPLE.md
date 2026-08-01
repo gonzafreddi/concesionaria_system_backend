@@ -31,6 +31,11 @@ DB_NAME=concesionaria
 CLOUDINARY_CLOUD_NAME=tu_cloud_name
 CLOUDINARY_API_KEY=tu_api_key
 CLOUDINARY_API_SECRET=tu_api_secret
+
+# Mail / Resend
+MAIL_ENABLED=false
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+RESEND_FROM_EMAIL="Concesionaria <no-reply@example.com>"
 ```
 
 ## Notas
@@ -40,6 +45,7 @@ CLOUDINARY_API_SECRET=tu_api_secret
 - `npm run seed:admin` crea el usuario inicial. Por defecto usa `admin@concesionaria.com` / `admin123`. Si el usuario ya existe, no pisa la contraseña salvo `ADMIN_RESET_PASSWORD=true`.
 - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS` y `DB_NAME` tambien los usa `npm run db:migrate`.
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` y `CLOUDINARY_API_SECRET` son obligatorias para subir y eliminar imágenes de vehículos.
+- `MAIL_ENABLED=true` habilita envios reales con Resend. En produccion, si esta habilitado, `RESEND_API_KEY` y `RESEND_FROM_EMAIL` son obligatorias.
 - Si no definis `CORS_ORIGINS`, la app deja `origin: false`.
 - Si no definis `PORT`, la app arranca en `3001`.
 - Si no definis `ENABLE_SWAGGER=true`, Swagger no se expone en `/api/docs`.

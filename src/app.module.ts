@@ -24,6 +24,8 @@ import { VehicleExpensesModule } from './vehicle-expenses/vehicle-expenses.modul
 import { DashboardModule } from './dashboard/dashboard.module';
 import { MailModule } from './mail/mail.module';
 import { LocationsModule } from './locations/locations.module';
+import { ExpensesModule } from './expenses/expenses.module';
+import { FinanceModule } from './finance/finance.module';
 import {
   getDatabaseConfig,
   shouldSynchronizeSchema,
@@ -44,7 +46,6 @@ import {
     ClientsModule,
     UsersModule,
     VehiclesModule,
-    // VehicleAcquisitionTypes,
     InspectionsModule,
     AuthModule,
     PreSaleModule,
@@ -57,6 +58,8 @@ import {
     DashboardModule,
     MailModule,
     LocationsModule,
+    ExpensesModule,
+    FinanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

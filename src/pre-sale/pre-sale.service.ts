@@ -16,7 +16,7 @@ export class PreSaleService {
     private readonly vehiclesService: VehiclesService,
   ) {}
 
-  create(createPreSaleDto: CreatePreSaleDto) {
+  create(_createPreSaleDto: CreatePreSaleDto) {
     return 'This action adds a new preSale';
   }
 
@@ -28,7 +28,7 @@ export class PreSaleService {
     return `This action returns a #${id} preSale`;
   }
 
-  update(id: number, updatePreSaleDto: UpdatePreSaleDto) {
+  update(id: number, _updatePreSaleDto: UpdatePreSaleDto) {
     return `This action updates a #${id} preSale`;
   }
 

@@ -4,7 +4,7 @@ import { UpdateQuoteDto } from './dto/update-quote.dto';
 
 @Injectable()
 export class QuotesService {
-  create(createQuoteDto: CreateQuoteDto) {
+  create(_createQuoteDto: CreateQuoteDto) {
     return 'This action adds a new quote';
   }
 
@@ -16,7 +16,7 @@ export class QuotesService {
     return `This action returns a #${id} quote`;
   }
 
-  update(id: number, updateQuoteDto: UpdateQuoteDto) {
+  update(id: number, _updateQuoteDto: UpdateQuoteDto) {
     return `This action updates a #${id} quote`;
   }
 

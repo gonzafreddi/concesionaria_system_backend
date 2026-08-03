@@ -6,7 +6,6 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  Index,
 } from 'typeorm';
 import { Sale } from '../../sales/entities/sale.entity';
 

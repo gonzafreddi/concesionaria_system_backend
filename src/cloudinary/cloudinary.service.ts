@@ -3,7 +3,11 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
+import {
+  v2 as cloudinary,
+  DeleteApiResponse,
+  UploadApiResponse,
+} from 'cloudinary';
 
 @Injectable()
 export class CloudinaryService {
@@ -136,7 +140,7 @@ export class CloudinaryService {
     try {
       const result = await cloudinary.uploader.destroy(publicId, {
         resource_type: resourceType,
-      });
+      }) as { result?: string };
 
       if (result.result !== 'ok' && result.result !== 'not found') {
         this.logger.error(
@@ -173,7 +177,7 @@ export class CloudinaryService {
     try {
       return JSON.stringify(error);
     } catch {
-      return String(error);
+      return this.formatCloudinaryError(error);
     }
   }
 

@@ -26,11 +26,7 @@ import {
   RequestStatus,
   VehicleRequest,
 } from '../vehicle_request/entities/vehicle_request.entity';
-import {
-  Vehicle,
-  VehicleEntryType,
-  VehicleStatus,
-} from '../vehicles/entities/vehicle.entity';
+import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
 import {
   DashboardRecentExpenseDto,
   DashboardRecentSaleDto,
@@ -131,16 +127,17 @@ export class DashboardService {
       this.getVehicleMargin(vehicle),
     );
     const availableVehicleMargins = vehicleMargins.filter(
-      (vehicle) => vehicle.status === VehicleStatus.AVAILABLE,
+      (vehicle) => String(vehicle.status) === String(VehicleStatus.AVAILABLE),
     );
     const activeExpenses = expenses.filter(
-      (expense) => expense.status !== VehicleExpenseStatus.CANCELLED,
+      (expense) =>
+        String(expense.status) !== String(VehicleExpenseStatus.CANCELLED),
     );
     const activeSales = sales.filter(
       (sale) => sale.status !== SaleStatus.CANCELLED,
     );
     const confirmedSales = sales.filter(
-      (sale) => sale.status === SaleStatus.CONFIRMED,
+      (sale) => String(sale.status) === String(SaleStatus.CONFIRMED),
     );
     const salesBalances = activeSales.map((sale) => ({
       sale,

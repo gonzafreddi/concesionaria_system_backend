@@ -1,7 +1,6 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { VehicleAcquisitionService } from './vechicle_acquisition.service';
-import { create } from 'domain';
 import { CreateVehicleAcquisitionDto } from './dto/vehicle-acquisition.dto';
 
 @ApiTags('vehicle-acquisition')

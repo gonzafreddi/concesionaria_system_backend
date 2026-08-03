@@ -144,10 +144,16 @@ export class VehiclesService {
 
     return vehicles
       .filter((vehicle) => this.hasInventoryAcquisition(vehicle))
-      .map(({ purchases, consignments, tradeIns, ...vehicle }) => ({
-        ...vehicle,
-        images: this.sortVehicleImages(vehicle.images),
-      }));
+      .map(({ purchases, consignments, tradeIns, images, ...vehicle }) => {
+        void purchases;
+        void consignments;
+        void tradeIns;
+
+        return {
+          ...vehicle,
+          images: this.sortVehicleImages(images),
+        };
+      });
   }
 
   async findOne(id: number): Promise<VehicleDetailDto> {

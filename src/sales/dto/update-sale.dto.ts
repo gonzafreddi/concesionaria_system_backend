@@ -1,12 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsEnum,
-  IsOptional,
-  IsNumber,
-  IsDateString,
-  Min,
-} from 'class-validator';
-import { SaleStatus } from '../entities/sale.entity';
+import { IsOptional, IsNumber, IsDateString, Min } from 'class-validator';
 
 /**
  * UpdateSaleDto

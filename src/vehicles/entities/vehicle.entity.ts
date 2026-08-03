@@ -22,6 +22,9 @@ import { Consignment } from '../../consignment/entities/consignment.entity';
 import { TradeIn } from '../../sales/entities/trade-in.entity';
 import { VehicleImage } from '../../vehicle-images/entities/vehicle-image.entity';
 import { VehicleExpense } from '../../vehicle-expenses/entities/vehicle-expense.entity';
+import { Location } from '../../locations/entities/location.entity';
+import { VehicleLocationMovement } from './vehicle-location-movement.entity';
+
 export enum VehicleType {
   NEW = 'NEW',
   USED = 'USED',
@@ -101,6 +104,9 @@ export class Vehicle {
   @Column({ name: 'owner_client_id', type: 'int', nullable: true })
   ownerClientId: number | null;
 
+  @Column({ name: 'location_id', type: 'int', nullable: true })
+  locationId: number | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
@@ -121,6 +127,13 @@ export class Vehicle {
   @ManyToOne(() => Client, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'owner_client_id' })
   ownerClient: Client | null;
+
+  @ManyToOne(() => Location, (location) => location.vehicles, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'location_id' })
+  location: Location | null;
 
   @OneToMany(() => Inspection, (i: Inspection) => i.vehicle)
   inspections: Inspection[];
@@ -158,7 +171,9 @@ export class Vehicle {
   @OneToMany(() => VehicleImage, (vehicleImage) => vehicleImage.vehicle)
   images: VehicleImage[];
 
+  @OneToMany(() => VehicleLocationMovement, (movement) => movement.vehicle)
+  locationMovements: VehicleLocationMovement[];
+
   @OneToMany(() => VehicleExpense, (vehicleExpense) => vehicleExpense.vehicle)
   expenses: VehicleExpense[];
 }
-

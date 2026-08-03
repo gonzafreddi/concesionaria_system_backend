@@ -5,10 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
-import {
-  Consignment,
-  ConsignmentStatus,
-} from './entities/consignment.entity';
+import { Consignment, ConsignmentStatus } from './entities/consignment.entity';
 import { CreateConsignmentDto } from './dto/create-consignment.dto';
 import { UpdateConsignmentDto } from './dto/update-consignment.dto';
 import {
@@ -119,8 +116,12 @@ export class ConsignmentService {
     await this.vehicleRepository.save(vehicle);
   }
 
-  async create(createConsignmentDto: CreateConsignmentDto): Promise<Consignment> {
-    if (createConsignmentDto.estimatedSalePrice < createConsignmentDto.takePrice) {
+  async create(
+    createConsignmentDto: CreateConsignmentDto,
+  ): Promise<Consignment> {
+    if (
+      createConsignmentDto.estimatedSalePrice < createConsignmentDto.takePrice
+    ) {
       throw new BadRequestException(
         'El precio estimado de venta no puede ser menor al precio de toma',
       );
@@ -175,7 +176,8 @@ export class ConsignmentService {
     const consignment = await this.findOne(id);
     this.ensureConsignmentIsMutable(consignment, 'actualizar');
 
-    const nextVehicleId = updateConsignmentDto.vehicleId ?? consignment.vehicleId;
+    const nextVehicleId =
+      updateConsignmentDto.vehicleId ?? consignment.vehicleId;
     const nextOwnerClientId =
       updateConsignmentDto.ownerClientId ?? consignment.ownerClientId;
     const nextTakePrice = Number(

@@ -26,11 +26,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException ? exception.getResponse() : null;
 
     const message = this.getMessage(exception, exceptionResponse);
+    const messageForLog = Array.isArray(message) ? message.join('; ') : message;
     const stack =
       exception instanceof Error ? exception.stack : JSON.stringify(exception);
 
     this.logger.error(
-      `${request.method} ${request.originalUrl || request.url} - ${status} - ${message}`,
+      `${request.method} ${request.originalUrl || request.url} - ${status} - ${messageForLog}`,
       stack,
     );
 

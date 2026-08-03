@@ -46,7 +46,9 @@ describe('VehicleExpensesService', () => {
 
   it('crea un gasto para un vehiculo existente', async () => {
     vehiclesRepositoryMock.findOne.mockResolvedValue({ id: 7 });
-    vehicleExpensesRepositoryMock.create.mockImplementation((payload) => payload);
+    vehicleExpensesRepositoryMock.create.mockImplementation(
+      (payload) => payload,
+    );
     vehicleExpensesRepositoryMock.save.mockImplementation((payload) =>
       Promise.resolve({ id: 3, ...payload }),
     );

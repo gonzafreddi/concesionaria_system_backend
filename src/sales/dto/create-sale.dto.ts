@@ -173,7 +173,8 @@ export class CreateSaleDto {
     required: false,
     type: CreateInitialPaymentDto,
     isArray: true,
-    description: 'Pagos iniciales cargados al crear la venta: seña, contado, entrega inicial, etc.',
+    description:
+      'Pagos iniciales cargados al crear la venta: seña, contado, entrega inicial, etc.',
   })
   @IsOptional()
   @IsArray()
@@ -181,4 +182,3 @@ export class CreateSaleDto {
   @Type(() => CreateInitialPaymentDto)
   initialPayments?: CreateInitialPaymentDto[];
 }
-

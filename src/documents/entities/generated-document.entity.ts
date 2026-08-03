@@ -62,7 +62,11 @@ export class GeneratedDocument {
     enum: RelatedEntityType,
     enumName: 'RelatedEntityType',
   })
-  @Column({ name: 'related_entity_type', type: 'enum', enum: RelatedEntityType })
+  @Column({
+    name: 'related_entity_type',
+    type: 'enum',
+    enum: RelatedEntityType,
+  })
   relatedEntityType: RelatedEntityType;
 
   @ApiProperty({
@@ -84,7 +88,12 @@ export class GeneratedDocument {
     nullable: true,
     example: 'concesionaria/documents/SALE/123/contract-1710000000',
   })
-  @Column({ name: 'file_public_id', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'file_public_id',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   filePublicId: string | null;
 
   @Exclude()
@@ -130,7 +139,12 @@ export class GeneratedDocument {
     nullable: true,
     example: 'user-123',
   })
-  @Column({ name: 'generated_by_id', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'generated_by_id',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   generatedById: string | null;
 
   @ApiProperty({ description: 'Fecha de creación del registro' })

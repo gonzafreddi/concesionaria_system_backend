@@ -11,6 +11,8 @@ import { VehiclesService } from './vehicles.service';
 import { PurchaseStatus } from '../purchase/entities/purchase.entity';
 import { ConsignmentStatus } from '../consignment/entities/consignment.entity';
 import { SaleStatus } from '../sales/entities/sale.entity';
+import { Location, LocationType } from '../locations/entities/location.entity';
+import { VehicleLocationMovement } from './entities/vehicle-location-movement.entity';
 
 describe('VehiclesService', () => {
   let service: VehiclesService;
@@ -23,6 +25,16 @@ describe('VehiclesService', () => {
     remove: jest.fn(),
   };
 
+  const locationsRepositoryMock = {
+    findOne: jest.fn(),
+  };
+
+  const vehicleLocationMovementsRepositoryMock = {
+    create: jest.fn(),
+    save: jest.fn(),
+    find: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -32,6 +44,14 @@ describe('VehiclesService', () => {
         {
           provide: getRepositoryToken(Vehicle),
           useValue: repositoryMock,
+        },
+        {
+          provide: getRepositoryToken(Location),
+          useValue: locationsRepositoryMock,
+        },
+        {
+          provide: getRepositoryToken(VehicleLocationMovement),
+          useValue: vehicleLocationMovementsRepositoryMock,
         },
       ],
     }).compile();
@@ -59,6 +79,7 @@ describe('VehiclesService', () => {
         status: VehicleStatus.AVAILABLE,
         entryType: VehicleEntryType.DIRECT_PURCHASE,
         ownerClientId: null,
+        locationId: null,
       },
     ]);
 
@@ -84,6 +105,7 @@ describe('VehiclesService', () => {
         status: VehicleStatus.AVAILABLE,
         entryType: VehicleEntryType.DIRECT_PURCHASE,
         ownerClientId: null,
+        locationId: null,
       },
     ]);
   });
@@ -109,19 +131,34 @@ describe('VehiclesService', () => {
           purchaseDate: new Date('2026-03-24T15:30:00.000Z'),
         },
       ],
+      images: [],
+      locationId: 3,
+      location: {
+        id: 3,
+        name: 'Showroom Centro',
+        type: LocationType.SHOWROOM,
+        address: 'Av. Centro 100',
+      },
     });
 
     const result = await service.findOne(7);
 
     expect(repositoryMock.findOne).toHaveBeenCalledWith({
       where: { id: 7 },
-      relations: ['purchases', 'images'],
+      relations: ['purchases', 'images', 'location'],
     });
     expect(result.purchaseDate).toBe('2026-03-24T15:30:00.000Z');
     expect(result.mileage).toBe(87500);
     expect(result.technicalSpecifications).toBe('Motor 1.6 manual');
     expect(result.entryType).toBe(VehicleEntryType.CONSIGNMENT);
     expect(result.ownerClientId).toBe(18);
+    expect(result.locationId).toBe(3);
+    expect(result.location).toEqual({
+      id: 3,
+      name: 'Showroom Centro',
+      type: LocationType.SHOWROOM,
+      address: 'Av. Centro 100',
+    });
   });
 
   it('lista en el get general solo vehiculos que ingresaron al stock', async () => {
@@ -165,7 +202,14 @@ describe('VehiclesService', () => {
     const result = await service.findAll();
 
     expect(repositoryMock.find).toHaveBeenCalledWith({
-      relations: ['purchases', 'consignments', 'tradeIns', 'tradeIns.sale', 'images'],
+      relations: [
+        'purchases',
+        'consignments',
+        'tradeIns',
+        'tradeIns.sale',
+        'images',
+        'location',
+      ],
       order: { id: 'DESC' },
     });
     expect(result).toEqual([
@@ -176,18 +220,21 @@ describe('VehiclesService', () => {
         mileage: 100000,
         technicalSpecifications: '1.4 nafta',
         images: [],
+        location: null,
       },
       {
         id: 13,
         vehiclePlate: 'AC456EF',
         entryType: VehicleEntryType.CONSIGNMENT,
         images: [],
+        location: null,
       },
       {
         id: 14,
         vehiclePlate: 'AD789GH',
         entryType: VehicleEntryType.TRADE_IN,
         images: [],
+        location: null,
       },
     ]);
   });
@@ -208,6 +255,7 @@ describe('VehiclesService', () => {
         status: VehicleStatus.PENDING_INSPECTION,
         entryType: VehicleEntryType.DIRECT_PURCHASE,
         ownerClientId: null,
+        locationId: null,
         purchases: [],
       },
       {
@@ -222,6 +270,7 @@ describe('VehiclesService', () => {
         status: VehicleStatus.AVAILABLE,
         entryType: VehicleEntryType.TRADE_IN,
         ownerClientId: 22,
+        locationId: null,
         purchases: [{ id: 4 }],
       },
     ]);
@@ -247,7 +296,63 @@ describe('VehiclesService', () => {
         status: VehicleStatus.PENDING_INSPECTION,
         entryType: VehicleEntryType.DIRECT_PURCHASE,
         ownerClientId: null,
+        locationId: null,
       },
     ]);
+  });
+
+  it('mueve un vehiculo y registra el historial con usuario autenticado', async () => {
+    locationsRepositoryMock.findOne.mockResolvedValue({
+      id: 2,
+      isActive: true,
+    });
+    repositoryMock.findOne
+      .mockResolvedValueOnce({ id: 7, locationId: 1 })
+      .mockResolvedValueOnce({
+        id: 7,
+        type: VehicleType.USED,
+        brand: 'Ford',
+        model: 'Focus',
+        year: 2020,
+        color: 'Gris',
+        vehiclePlate: 'AA123BB',
+        price: '18500000',
+        acquisitionPrice: null,
+        mileage: null,
+        technicalSpecifications: null,
+        status: VehicleStatus.AVAILABLE,
+        entryType: VehicleEntryType.DIRECT_PURCHASE,
+        ownerClientId: null,
+        locationId: 2,
+        purchases: [],
+        images: [],
+        location: {
+          id: 2,
+          name: 'Deposito Norte',
+          type: LocationType.DEPOSIT,
+          address: null,
+        },
+      });
+    repositoryMock.save.mockResolvedValue({ id: 7, locationId: 2 });
+    vehicleLocationMovementsRepositoryMock.create.mockImplementation(
+      (payload) => payload,
+    );
+    vehicleLocationMovementsRepositoryMock.save.mockResolvedValue({ id: 10 });
+
+    const result = await service.moveLocation(
+      7,
+      { locationId: 2, reason: ' Traslado a deposito ', userId: 99 },
+      5,
+    );
+
+    expect(repositoryMock.save).toHaveBeenCalledWith({ id: 7, locationId: 2 });
+    expect(vehicleLocationMovementsRepositoryMock.create).toHaveBeenCalledWith({
+      vehicleId: 7,
+      fromLocationId: 1,
+      toLocationId: 2,
+      reason: 'Traslado a deposito',
+      userId: 5,
+    });
+    expect(result.locationId).toBe(2);
   });
 });

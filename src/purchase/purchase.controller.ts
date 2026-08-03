@@ -52,7 +52,8 @@ export class PurchaseController {
   @Get()
   @ApiOperation({
     summary: 'Listar compras',
-    description: 'Obtiene todas las compras con cliente, vehículo y documentos.',
+    description:
+      'Obtiene todas las compras con cliente, vehículo y documentos.',
   })
   @ApiResponse({
     status: 200,
@@ -122,9 +123,7 @@ export class PurchaseController {
     status: 400,
     description: 'La compra tiene documentos asociados y no puede eliminarse',
   })
-  remove(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<{ deleted: true }> {
+  remove(@Param('id', ParseIntPipe) id: number): Promise<{ deleted: true }> {
     return this.purchaseService.remove(id);
   }
 }

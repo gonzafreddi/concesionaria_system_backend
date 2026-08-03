@@ -3,12 +3,12 @@ import { IsNumber, IsInt, IsOptional, Min } from 'class-validator';
 
 /**
  * CreateTradeInDto
- * 
+ *
  * DTO para registrar un vehículo como parte de pago (trade-in)
- * 
+ *
  * - vehicleId: ID del vehículo usado que se aporta
  * - tradeInValue: legado/opcional; la valuación se toma del acquisitionPrice del vehículo
- * 
+ *
  * Validaciones en SalesService:
  * - Vehicle debe existir
  * - Vehicle no puede estar en otra venta activa

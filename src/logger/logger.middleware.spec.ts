@@ -30,7 +30,7 @@ describe('LoggerMiddleware', () => {
       }),
     };
 
-    middleware.use(req as any, res as any, next);
+    middleware.use(req as any, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
     expect(logSpy).toHaveBeenCalledWith(
@@ -43,9 +43,7 @@ describe('LoggerMiddleware', () => {
     handlers.finish();
 
     expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'Completed request POST /payments - 200',
-      ),
+      expect.stringContaining('Completed request POST /payments - 200'),
     );
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringContaining('User: admin@test.com (id: 42, role: admin)'),

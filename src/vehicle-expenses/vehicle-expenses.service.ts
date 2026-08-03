@@ -116,7 +116,10 @@ export class VehicleExpensesService {
     return this.vehicleExpensesRepository.save(expense);
   }
 
-  async remove(vehicleId: number, expenseId: number): Promise<{ deleted: true }> {
+  async remove(
+    vehicleId: number,
+    expenseId: number,
+  ): Promise<{ deleted: true }> {
     await this.ensureVehicleExists(vehicleId);
     const expense = await this.getVehicleExpenseOrFail(vehicleId, expenseId);
 

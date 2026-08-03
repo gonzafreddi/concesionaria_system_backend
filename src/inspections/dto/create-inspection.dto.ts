@@ -5,7 +5,6 @@ import {
   IsOptional,
   Min,
   Max,
-  IsDecimal,
   IsString,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';

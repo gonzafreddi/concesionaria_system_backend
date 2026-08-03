@@ -53,9 +53,9 @@ describe('VehiclesController', () => {
       { id: 2, vehiclePlate: 'AB123CD' },
     ]);
 
-    await expect(controller.getAvailableForPurchaseVehicles()).resolves.toEqual([
-      { id: 2, vehiclePlate: 'AB123CD' },
-    ]);
+    await expect(controller.getAvailableForPurchaseVehicles()).resolves.toEqual(
+      [{ id: 2, vehiclePlate: 'AB123CD' }],
+    );
     expect(
       vehiclesServiceMock.getVehiclesAvailableForPurchase,
     ).toHaveBeenCalled();

@@ -6,11 +6,18 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner, In } from 'typeorm';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { Payment, PaymentConcept, PaymentStatus } from './entities/payment.entity';
+import {
+  Payment,
+  PaymentConcept,
+  PaymentStatus,
+} from './entities/payment.entity';
 import { Sale, SaleStatus } from '../sales/entities/sale.entity';
 import { SaleBalanceCalculatorService } from '../sales/sale-balance-calculator.service';
 import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
-import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
+import {
+  Consignment,
+  ConsignmentStatus,
+} from '../consignment/entities/consignment.entity';
 
 /**
  * PAYMENTS SERVICE - Gestión de pagos
@@ -131,7 +138,6 @@ export class PaymentsService {
       await queryRunner.release();
     }
   }
-
 
   private resolvePaidAt(status: PaymentStatus, paidAt?: string): Date | null {
     if (status !== PaymentStatus.CONFIRMED) {

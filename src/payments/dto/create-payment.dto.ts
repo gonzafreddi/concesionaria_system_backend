@@ -14,7 +14,7 @@ import {
   PaymentStatus,
   PaymentConcept,
 } from '../entities/payment.entity';
-import { Transform } from 'class-transformer';
+import { Transform, type TransformFnParams } from 'class-transformer';
 
 /**
  * CreatePaymentDto
@@ -32,7 +32,7 @@ import { Transform } from 'class-transformer';
 
 export class CreatePaymentDto {
   @ApiProperty()
-  @Transform(({ value }) => parseInt(value, 10))
+  @Transform(({ value }: TransformFnParams) => parseInt(String(value), 10))
   @IsInt()
   saleId: number;
 
@@ -66,10 +66,10 @@ export class CreatePaymentDto {
 
   @ApiProperty({
     required: false,
-    description: 'Fecha efectiva del pago. Solo se usa si el pago ingresa confirmado.',
+    description:
+      'Fecha efectiva del pago. Solo se usa si el pago ingresa confirmado.',
   })
   @IsOptional()
   @IsDateString()
   paidAt?: string;
 }
-

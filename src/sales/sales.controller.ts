@@ -45,7 +45,10 @@ export class SalesController {
     @Param('id', ParseIntPipe) id: number,
     @Body() updateSaleWorkflowStatusDto: UpdateSaleWorkflowStatusDto,
   ) {
-    return this.salesService.updateWorkflowStatus(id, updateSaleWorkflowStatusDto);
+    return this.salesService.updateWorkflowStatus(
+      id,
+      updateSaleWorkflowStatusDto,
+    );
   }
 
   @Patch(':id')

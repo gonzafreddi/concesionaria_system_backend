@@ -27,8 +27,7 @@ export class PreSaleDocumentationService {
     if (!vehicle) {
       throw new NotFoundException(`Vehicle with id ${dto.vehicleId} not found`);
     }
-    const completed =
-      dto.completed ?? dto.status === PreSaleStatus.COMPLETED;
+    const completed = dto.completed ?? dto.status === PreSaleStatus.COMPLETED;
     const entity = this.repository.create({
       ...dto,
       completed,

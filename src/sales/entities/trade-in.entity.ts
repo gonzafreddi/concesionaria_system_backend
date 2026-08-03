@@ -10,9 +10,9 @@ import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 
 /**
  * TradeIn Entity
- * 
+ *
  * Representa un vehículo dado como parte de pago en una operación.
- * 
+ *
  * Un vehículo en TradeIn:
  * - Es un vehículo usado que el cliente aporta
  * - Se valúa en tradeInValue

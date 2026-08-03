@@ -1,19 +1,35 @@
 import {
-  Controller,
-  Get,
-  Post,
+  BadRequestException,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
+  Get,
+  Param,
   ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+import type { Request } from 'express';
 import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehicleSaleOptionDto } from './dto/vehicle-sale-option.dto';
 import { VehicleDetailDto } from './dto/vehicle-detail.dto';
+import { MoveVehicleLocationDto } from './dto/move-vehicle-location.dto';
+
+type AuthenticatedRequest = Request & {
+  user?: {
+    id?: number;
+  };
+};
 
 @ApiTags('vehicles')
 @Controller('vehicles')
@@ -26,9 +42,20 @@ export class VehiclesController {
   }
 
   @Get()
-  findAll() {
-    return this.vehiclesService.findAll();
+  @ApiQuery({ name: 'locationId', required: false, type: Number })
+  findAll(@Query('locationId') locationId?: string) {
+    if (locationId === undefined) {
+      return this.vehiclesService.findAll();
+    }
+
+    const parsedLocationId = Number(locationId);
+    if (!Number.isInteger(parsedLocationId) || parsedLocationId <= 0) {
+      throw new BadRequestException('locationId debe ser un entero positivo');
+    }
+
+    return this.vehiclesService.findAll(parsedLocationId);
   }
+
   @ApiOperation({
     summary: 'Listar vehículos habilitados para ser ofrecidos en una venta',
   })
@@ -85,6 +112,27 @@ export class VehiclesController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.vehiclesService.remove(id);
   }
+
+  @ApiOperation({ summary: 'Mover un vehiculo a otra ubicacion' })
+  @Patch(':id/location')
+  moveLocation(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() moveVehicleLocationDto: MoveVehicleLocationDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.vehiclesService.moveLocation(
+      id,
+      moveVehicleLocationDto,
+      request.user?.id ?? null,
+    );
+  }
+
+  @ApiOperation({ summary: 'Listar historial de movimientos del vehiculo' })
+  @Get(':id/location-movements')
+  findLocationMovements(@Param('id', ParseIntPipe) id: number) {
+    return this.vehiclesService.findLocationMovements(id);
+  }
+
   @ApiOperation({
     summary: 'Check if pre-sale process is completed for a vehicle',
   })

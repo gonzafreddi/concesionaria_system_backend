@@ -23,6 +23,7 @@ import { VehicleImagesModule } from './vehicle-images/vehicle-images.module';
 import { VehicleExpensesModule } from './vehicle-expenses/vehicle-expenses.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { MailModule } from './mail/mail.module';
+import { LocationsModule } from './locations/locations.module';
 import {
   getDatabaseConfig,
   shouldSynchronizeSchema,
@@ -55,6 +56,7 @@ import {
     VehicleExpensesModule,
     DashboardModule,
     MailModule,
+    LocationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

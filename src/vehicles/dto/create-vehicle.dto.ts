@@ -1,16 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsString,
+  IsDateString,
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
-  IsInt,
-  IsDateString,
+  IsPositive,
+  IsString,
 } from 'class-validator';
 import {
   VehicleEntryType,
-  VehicleType,
   VehicleStatus,
+  VehicleType,
 } from '../entities/vehicle.entity';
 
 export class CreateVehicleDto {
@@ -86,6 +87,12 @@ export class CreateVehicleDto {
   @IsOptional()
   @IsInt()
   ownerClientId?: number | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  locationId?: number | null;
 
   @ApiProperty({ required: false })
   @IsOptional()

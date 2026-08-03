@@ -51,6 +51,9 @@ export class VehicleSaleOptionDto {
   @ApiProperty({ example: 15, nullable: true, required: false })
   ownerClientId: number | null;
 
+  @ApiPropertyOptional({ example: 1, nullable: true })
+  locationId: number | null;
+
   @ApiProperty({ example: 20000000, nullable: false })
   aquisitionPrice: number;
 }

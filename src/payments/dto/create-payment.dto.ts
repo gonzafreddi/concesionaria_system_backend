@@ -66,10 +66,10 @@ export class CreatePaymentDto {
 
   @ApiProperty({
     required: false,
-    description: 'Fecha efectiva del pago. Solo se usa si el pago ingresa confirmado.',
+    description:
+      'Fecha efectiva del pago. Solo se usa si el pago ingresa confirmado.',
   })
   @IsOptional()
   @IsDateString()
   paidAt?: string;
 }
-

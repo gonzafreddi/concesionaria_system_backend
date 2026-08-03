@@ -8,7 +8,8 @@ import { ApiProperty } from '@nestjs/swagger';
  */
 export class UpdateInspectionDto extends PartialType(CreateInspectionDto) {
   @ApiProperty({
-    description: 'Todos los campos heredados de CreateInspectionDto son opcionales para actualización',
+    description:
+      'Todos los campos heredados de CreateInspectionDto son opcionales para actualización',
   })
   readonly _updateNote?: string;
 }

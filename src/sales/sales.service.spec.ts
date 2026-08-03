@@ -159,37 +159,33 @@ describe('SalesService', () => {
     const tradeInEntity = {} as TradeIn;
 
     const manager = {
-      findOne: jest
-        .fn()
-        .mockImplementation((entity, options) => {
-          if (entity === Vehicle && options.where.id === 1) {
-            return Promise.resolve(availableVehicle);
-          }
-          if (entity === Vehicle && options.where.id === 2) {
-            return Promise.resolve(tradeInVehicle);
-          }
-          if (entity === Client) {
-            return Promise.resolve(client);
-          }
-          if (entity === User) {
-            return Promise.resolve(user);
-          }
-          if (entity === TradeIn) {
-            return Promise.resolve(null);
-          }
+      findOne: jest.fn().mockImplementation((entity, options) => {
+        if (entity === Vehicle && options.where.id === 1) {
+          return Promise.resolve(availableVehicle);
+        }
+        if (entity === Vehicle && options.where.id === 2) {
+          return Promise.resolve(tradeInVehicle);
+        }
+        if (entity === Client) {
+          return Promise.resolve(client);
+        }
+        if (entity === User) {
+          return Promise.resolve(user);
+        }
+        if (entity === TradeIn) {
           return Promise.resolve(null);
-        }),
-      create: jest
-        .fn()
-        .mockImplementation((entity, payload) => {
-          if (entity === Sale) {
-            return { ...saleEntity, ...payload };
-          }
-          if (entity === TradeIn) {
-            return { ...tradeInEntity, ...payload };
-          }
-          return payload;
-        }),
+        }
+        return Promise.resolve(null);
+      }),
+      create: jest.fn().mockImplementation((entity, payload) => {
+        if (entity === Sale) {
+          return { ...saleEntity, ...payload };
+        }
+        if (entity === TradeIn) {
+          return { ...tradeInEntity, ...payload };
+        }
+        return payload;
+      }),
       save: jest.fn().mockImplementation(async (entity) => entity),
     };
 
@@ -291,7 +287,6 @@ describe('SalesService', () => {
       }),
     );
   });
-
 
   it('crea una venta con seña inicial confirmada en un solo paso', async () => {
     const availableVehicle = {

@@ -23,8 +23,7 @@ export class PreSaleBodyworkService {
     if (!vehicle) {
       throw new NotFoundException(`Vehicle with id ${dto.vehicleId} not found`);
     }
-    const completed =
-      dto.completed ?? dto.status === PreSaleStatus.COMPLETED;
+    const completed = dto.completed ?? dto.status === PreSaleStatus.COMPLETED;
     const entity = this.repository.create({
       ...dto,
       completed,
@@ -58,7 +57,11 @@ export class PreSaleBodyworkService {
     if (!current)
       throw new NotFoundException(`PreSaleBodywork with id ${id} not found`);
 
-    const completed = this.resolveCompleted(dto.completed, dto.status, current.completed);
+    const completed = this.resolveCompleted(
+      dto.completed,
+      dto.status,
+      current.completed,
+    );
     const entity = await this.repository.preload({
       id,
       ...dto,

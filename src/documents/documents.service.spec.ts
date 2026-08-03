@@ -7,6 +7,8 @@ import {
   GeneratedDocument,
   RelatedEntityType,
 } from './entities/generated-document.entity';
+import { Sale } from '../sales/entities/sale.entity';
+import { Purchase } from '../purchase/entities/purchase.entity';
 
 describe('DocumentsService', () => {
   let service: GeneratedDocumentsService;
@@ -14,9 +16,17 @@ describe('DocumentsService', () => {
     create: jest.fn(),
     save: jest.fn(),
   };
+  const salesRepository = {
+    exists: jest.fn(),
+  };
+  const purchaseRepository = {
+    exists: jest.fn(),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    salesRepository.exists.mockResolvedValue(true);
+    purchaseRepository.exists.mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -24,6 +34,14 @@ describe('DocumentsService', () => {
         {
           provide: getRepositoryToken(GeneratedDocument),
           useValue: repository,
+        },
+        {
+          provide: getRepositoryToken(Sale),
+          useValue: salesRepository,
+        },
+        {
+          provide: getRepositoryToken(Purchase),
+          useValue: purchaseRepository,
         },
       ],
     }).compile();
@@ -97,6 +115,80 @@ describe('DocumentsService', () => {
         '7',
       ),
     ).rejects.toThrow('no corresponde a un PDF válido');
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects a sale document when the sale does not exist', async () => {
+    salesRepository.exists.mockResolvedValue(false);
+
+    const file = {
+      buffer: Buffer.from('%PDF-1.7 test'),
+      originalname: 'boleto-venta.pdf',
+      mimetype: 'application/pdf',
+      size: 13,
+    } as Express.Multer.File;
+
+    await expect(
+      service.uploadDocument(
+        file,
+        {
+          templateCode: 'sale-contract-v1',
+          documentType: DocumentType.CONTRACT,
+          relatedEntityType: RelatedEntityType.SALE,
+          relatedEntityId: '42',
+        },
+        '7',
+      ),
+    ).rejects.toThrow('Venta 42 no encontrada');
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects a purchase document when the purchase does not exist', async () => {
+    purchaseRepository.exists.mockResolvedValue(false);
+
+    const file = {
+      buffer: Buffer.from('%PDF-1.7 test'),
+      originalname: 'boleto-compra.pdf',
+      mimetype: 'application/pdf',
+      size: 13,
+    } as Express.Multer.File;
+
+    await expect(
+      service.uploadDocument(
+        file,
+        {
+          templateCode: 'purchase-contract-v1',
+          documentType: DocumentType.CONTRACT,
+          relatedEntityType: RelatedEntityType.PURCHASE,
+          relatedEntityId: '99',
+        },
+        '7',
+      ),
+    ).rejects.toThrow('Compra 99 no encontrada');
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects sale and purchase documents with a non numeric related id', async () => {
+    const file = {
+      buffer: Buffer.from('%PDF-1.7 test'),
+      originalname: 'boleto.pdf',
+      mimetype: 'application/pdf',
+      size: 13,
+    } as Express.Multer.File;
+
+    await expect(
+      service.uploadDocument(
+        file,
+        {
+          templateCode: 'sale-contract-v1',
+          documentType: DocumentType.CONTRACT,
+          relatedEntityType: RelatedEntityType.SALE,
+          relatedEntityId: 'abc',
+        },
+        '7',
+      ),
+    ).rejects.toThrow('entidad relacionada');
+    expect(salesRepository.exists).not.toHaveBeenCalled();
     expect(repository.save).not.toHaveBeenCalled();
   });
 });

@@ -22,6 +22,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { VehicleImagesModule } from './vehicle-images/vehicle-images.module';
 import { VehicleExpensesModule } from './vehicle-expenses/vehicle-expenses.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { MailModule } from './mail/mail.module';
 import {
   getDatabaseConfig,
   shouldSynchronizeSchema,
@@ -53,6 +54,7 @@ import {
     VehicleImagesModule,
     VehicleExpensesModule,
     DashboardModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

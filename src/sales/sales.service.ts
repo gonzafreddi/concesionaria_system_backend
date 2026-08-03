@@ -34,7 +34,10 @@ import { CreatePaymentDto } from '../payments/dto/create-payment.dto';
 import { VehiclesService } from '../vehicles/vehicles.service';
 import { SaleAccountBalanceService } from './sale-account-balance.service';
 import { SaleBalanceCalculatorService } from './sale-balance-calculator.service';
-import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
+import {
+  Consignment,
+  ConsignmentStatus,
+} from '../consignment/entities/consignment.entity';
 
 /**
  * SALES SERVICE - Lógica centralizada
@@ -689,7 +692,10 @@ export class SalesService {
           tradeInsTotal +
           Number(payment.amount ?? 0);
 
-        if (!wasConfirmed && nextCoveredAmount > Number(saleWithTradeIns.finalPrice)) {
+        if (
+          !wasConfirmed &&
+          nextCoveredAmount > Number(saleWithTradeIns.finalPrice)
+        ) {
           throw new BadRequestException(
             'El pago excede el saldo pendiente de la operación',
           );
@@ -708,7 +714,10 @@ export class SalesService {
 
       saleWithTradeIns.status = this.calculateSaleStatus(saleWithTradeIns);
       // Cuando la venta queda cubierta, el vehículo principal debe quedar vendido.
-      await this.syncPrimaryVehicleStatus(saleWithTradeIns, queryRunner.manager);
+      await this.syncPrimaryVehicleStatus(
+        saleWithTradeIns,
+        queryRunner.manager,
+      );
       await this.syncConsignmentStatusWithVehicleStatus(
         saleWithTradeIns.vehicle,
         queryRunner.manager,
@@ -804,7 +813,9 @@ export class SalesService {
     });
     const coveredAmount = balance.tradeInsTotal + balance.paymentsTotal;
     const hasValidPayments = Array.isArray(sale.payments)
-      ? sale.payments.some((payment) => payment.status !== PaymentStatus.REJECTED)
+      ? sale.payments.some(
+          (payment) => payment.status !== PaymentStatus.REJECTED,
+        )
       : false;
 
     if (coveredAmount <= 0 && !hasValidPayments) {
@@ -861,7 +872,6 @@ export class SalesService {
     }
   }
 
-
   private async createInitialPayments(
     sale: Sale,
     initialPayments: NonNullable<CreateSaleDto['initialPayments']>,
@@ -894,7 +904,10 @@ export class SalesService {
         status: resolvedStatus,
         concept: initialPayment.concept ?? PaymentConcept.PARTIAL_PAYMENT,
         notes: initialPayment.notes ?? null,
-        paidAt: this.resolvePaymentPaidAt(resolvedStatus, initialPayment.paidAt),
+        paidAt: this.resolvePaymentPaidAt(
+          resolvedStatus,
+          initialPayment.paidAt,
+        ),
       });
 
       payments.push(await manager.save(payment));
@@ -909,7 +922,10 @@ export class SalesService {
       .reduce((total, payment) => total + Number(payment.amount ?? 0), 0);
   }
 
-  private resolvePaymentPaidAt(status: PaymentStatus, paidAt?: string): Date | null {
+  private resolvePaymentPaidAt(
+    status: PaymentStatus,
+    paidAt?: string,
+  ): Date | null {
     if (status !== PaymentStatus.CONFIRMED) {
       return null;
     }

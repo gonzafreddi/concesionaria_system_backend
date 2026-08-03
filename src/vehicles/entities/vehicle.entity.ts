@@ -161,4 +161,3 @@ export class Vehicle {
   @OneToMany(() => VehicleExpense, (vehicleExpense) => vehicleExpense.vehicle)
   expenses: VehicleExpense[];
 }
-

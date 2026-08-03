@@ -18,7 +18,10 @@ export class CreateConsignmentDto {
   @Min(1)
   vehicleId: number;
 
-  @ApiProperty({ example: 25, description: 'ID del cliente dueño del vehiculo' })
+  @ApiProperty({
+    example: 25,
+    description: 'ID del cliente dueño del vehiculo',
+  })
   @Transform(({ value }) => Number(value))
   @IsInt()
   @Min(1)

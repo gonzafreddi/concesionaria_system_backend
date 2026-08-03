@@ -54,8 +54,8 @@ describe('AuthGuard', () => {
     } as unknown as Reflector;
     const guard = new AuthGuard(jwtService, reflector);
 
-    expect(() => guard.canActivate(createContext({ headers: {}, socket: {} }))).toThrow(
-      UnauthorizedException,
-    );
+    expect(() =>
+      guard.canActivate(createContext({ headers: {}, socket: {} })),
+    ).toThrow(UnauthorizedException);
   });
 });

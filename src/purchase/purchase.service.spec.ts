@@ -9,7 +9,10 @@ import {
   VehicleEntryType,
   VehicleStatus,
 } from '../vehicles/entities/vehicle.entity';
-import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
+import {
+  Consignment,
+  ConsignmentStatus,
+} from '../consignment/entities/consignment.entity';
 import { GeneratedDocument } from '../documents/entities/generated-document.entity';
 
 describe('PurchaseService', () => {

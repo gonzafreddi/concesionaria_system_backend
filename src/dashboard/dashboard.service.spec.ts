@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Client } from '../clients/entities/client.entity';
-import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
+import {
+  Consignment,
+  ConsignmentStatus,
+} from '../consignment/entities/consignment.entity';
 import { Inspection } from '../inspections/entities/inspection.entity';
 import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { PreSaleStatus } from '../pre-sale/entities/pre-sale-status.enum';
@@ -9,13 +12,20 @@ import { PreSaleAesthetic } from '../pre-sale/entities/pre_sale_aesthetic.entity
 import { PreSaleBodywork } from '../pre-sale/entities/pre_sale_bodywork.entity';
 import { PreSaleDocumentation } from '../pre-sale/entities/pre_sale_documentation.entity';
 import { PreSaleMechanical } from '../pre-sale/entities/pre_sale_mechanical.entity';
-import { Sale, SaleStatus, TransferStatus } from '../sales/entities/sale.entity';
+import {
+  Sale,
+  SaleStatus,
+  TransferStatus,
+} from '../sales/entities/sale.entity';
 import {
   VehicleExpense,
   VehicleExpenseStatus,
   VehicleExpenseType,
 } from '../vehicle-expenses/entities/vehicle-expense.entity';
-import { RequestStatus, VehicleRequest } from '../vehicle_request/entities/vehicle_request.entity';
+import {
+  RequestStatus,
+  VehicleRequest,
+} from '../vehicle_request/entities/vehicle_request.entity';
 import {
   Vehicle,
   VehicleEntryType,
@@ -53,18 +63,48 @@ describe('DashboardService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DashboardService,
-        { provide: getRepositoryToken(Vehicle), useValue: repositories.vehicles },
-        { provide: getRepositoryToken(VehicleExpense), useValue: repositories.expenses },
+        {
+          provide: getRepositoryToken(Vehicle),
+          useValue: repositories.vehicles,
+        },
+        {
+          provide: getRepositoryToken(VehicleExpense),
+          useValue: repositories.expenses,
+        },
         { provide: getRepositoryToken(Sale), useValue: repositories.sales },
-        { provide: getRepositoryToken(Payment), useValue: repositories.payments },
+        {
+          provide: getRepositoryToken(Payment),
+          useValue: repositories.payments,
+        },
         { provide: getRepositoryToken(Client), useValue: repositories.clients },
-        { provide: getRepositoryToken(Inspection), useValue: repositories.inspections },
-        { provide: getRepositoryToken(Consignment), useValue: repositories.consignments },
-        { provide: getRepositoryToken(VehicleRequest), useValue: repositories.vehicleRequests },
-        { provide: getRepositoryToken(PreSaleDocumentation), useValue: repositories.preSaleDocumentation },
-        { provide: getRepositoryToken(PreSaleMechanical), useValue: repositories.preSaleMechanical },
-        { provide: getRepositoryToken(PreSaleAesthetic), useValue: repositories.preSaleAesthetic },
-        { provide: getRepositoryToken(PreSaleBodywork), useValue: repositories.preSaleBodywork },
+        {
+          provide: getRepositoryToken(Inspection),
+          useValue: repositories.inspections,
+        },
+        {
+          provide: getRepositoryToken(Consignment),
+          useValue: repositories.consignments,
+        },
+        {
+          provide: getRepositoryToken(VehicleRequest),
+          useValue: repositories.vehicleRequests,
+        },
+        {
+          provide: getRepositoryToken(PreSaleDocumentation),
+          useValue: repositories.preSaleDocumentation,
+        },
+        {
+          provide: getRepositoryToken(PreSaleMechanical),
+          useValue: repositories.preSaleMechanical,
+        },
+        {
+          provide: getRepositoryToken(PreSaleAesthetic),
+          useValue: repositories.preSaleAesthetic,
+        },
+        {
+          provide: getRepositoryToken(PreSaleBodywork),
+          useValue: repositories.preSaleBodywork,
+        },
       ],
     }).compile();
 

@@ -165,7 +165,13 @@ describe('VehiclesService', () => {
     const result = await service.findAll();
 
     expect(repositoryMock.find).toHaveBeenCalledWith({
-      relations: ['purchases', 'consignments', 'tradeIns', 'tradeIns.sale', 'images'],
+      relations: [
+        'purchases',
+        'consignments',
+        'tradeIns',
+        'tradeIns.sale',
+        'images',
+      ],
       order: { id: 'DESC' },
     });
     expect(result).toEqual([

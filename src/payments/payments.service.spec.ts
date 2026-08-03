@@ -5,7 +5,10 @@ import { DataSource } from 'typeorm';
 import { SaleBalanceCalculatorService } from '../sales/sale-balance-calculator.service';
 import { Sale, SaleStatus } from '../sales/entities/sale.entity';
 import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
-import { Consignment, ConsignmentStatus } from '../consignment/entities/consignment.entity';
+import {
+  Consignment,
+  ConsignmentStatus,
+} from '../consignment/entities/consignment.entity';
 import {
   Currency,
   Payment,
@@ -199,7 +202,11 @@ describe('PaymentsService', () => {
         ...payload,
       })),
       save: jest.fn().mockImplementation(async (entity) => entity),
-      find: jest.fn().mockResolvedValue([{ amount: 12000, status: PaymentStatus.CONFIRMED }]),
+      find: jest
+        .fn()
+        .mockResolvedValue([
+          { amount: 12000, status: PaymentStatus.CONFIRMED },
+        ]),
     };
 
     const queryRunner = {
@@ -406,9 +413,7 @@ describe('PaymentsService', () => {
     dataSourceMock.createQueryRunner.mockReturnValue(queryRunner);
 
     await expect(service.confirmPayment(103)).rejects.toThrow(
-      new BadRequestException(
-        'El pago excede el saldo pendiente de la venta',
-      ),
+      new BadRequestException('El pago excede el saldo pendiente de la venta'),
     );
   });
 
@@ -458,7 +463,9 @@ describe('PaymentsService', () => {
       find: jest
         .fn()
         .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([{ ...payment, status: PaymentStatus.REJECTED }]),
+        .mockResolvedValueOnce([
+          { ...payment, status: PaymentStatus.REJECTED },
+        ]),
     };
 
     const queryRunner = {

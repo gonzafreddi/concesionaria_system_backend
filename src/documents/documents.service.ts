@@ -13,6 +13,8 @@ import {
   GeneratedDocument,
   RelatedEntityType,
 } from './entities/generated-document.entity';
+import { Sale } from '../sales/entities/sale.entity';
+import { Purchase } from '../purchase/entities/purchase.entity';
 
 const ALLOWED_MIME_TYPES = ['application/pdf'];
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
@@ -22,6 +24,10 @@ export class GeneratedDocumentsService {
   constructor(
     @InjectRepository(GeneratedDocument)
     private readonly documentsRepository: Repository<GeneratedDocument>,
+    @InjectRepository(Sale)
+    private readonly salesRepository: Repository<Sale>,
+    @InjectRepository(Purchase)
+    private readonly purchaseRepository: Repository<Purchase>,
   ) {}
 
   async uploadDocument(
@@ -30,6 +36,8 @@ export class GeneratedDocumentsService {
     generatedById: string | null,
   ): Promise<GeneratedDocument> {
     this.validateFile(file);
+    await this.validateRelatedEntity(createDto);
+
     const documentId = randomUUID();
 
     const document = this.documentsRepository.create({
@@ -129,6 +137,46 @@ export class GeneratedDocumentsService {
       throw new BadRequestException(
         'El contenido del archivo no corresponde a un PDF válido',
       );
+    }
+  }
+
+  private async validateRelatedEntity(
+    createDto: CreateGeneratedDocumentDto,
+  ): Promise<void> {
+    const entityId = Number(createDto.relatedEntityId);
+    const requiresNumericId = [
+      RelatedEntityType.SALE,
+      RelatedEntityType.PURCHASE,
+    ].includes(createDto.relatedEntityType);
+
+    if (requiresNumericId && (!Number.isInteger(entityId) || entityId <= 0)) {
+      throw new BadRequestException(
+        'El ID de la entidad relacionada debe ser un numero entero positivo',
+      );
+    }
+
+    if (createDto.relatedEntityType === RelatedEntityType.SALE) {
+      const saleExists = await this.salesRepository.exists({
+        where: { id: entityId },
+      });
+
+      if (!saleExists) {
+        throw new NotFoundException(
+          'Venta ' + createDto.relatedEntityId + ' no encontrada',
+        );
+      }
+    }
+
+    if (createDto.relatedEntityType === RelatedEntityType.PURCHASE) {
+      const purchaseExists = await this.purchaseRepository.exists({
+        where: { id: entityId },
+      });
+
+      if (!purchaseExists) {
+        throw new NotFoundException(
+          'Compra ' + createDto.relatedEntityId + ' no encontrada',
+        );
+      }
     }
   }
 }

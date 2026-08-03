@@ -64,7 +64,8 @@ export class VehiclesController {
   }
 
   @ApiOkResponse({
-    description: 'Retorna el detalle del vehículo, incluyendo fecha de compra si existe',
+    description:
+      'Retorna el detalle del vehículo, incluyendo fecha de compra si existe',
     type: VehicleDetailDto,
   })
   @Get(':id')

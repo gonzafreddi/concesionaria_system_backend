@@ -236,8 +236,10 @@ export class DashboardService {
       operations: {
         inspectionsTotal,
         pendingInspections:
-          this.countVehiclesByStatus(vehicles, VehicleStatus.PENDING_INSPECTION) +
-          this.countVehiclesByStatus(vehicles, VehicleStatus.INSPECTION),
+          this.countVehiclesByStatus(
+            vehicles,
+            VehicleStatus.PENDING_INSPECTION,
+          ) + this.countVehiclesByStatus(vehicles, VehicleStatus.INSPECTION),
         preSaleInProgress: preSaleVehicleIds.size,
         pendingDocumentation,
         pendingTransfers: sales.filter(
@@ -298,7 +300,9 @@ export class DashboardService {
       status: expense.status,
       description: expense.description,
       amount: Number(expense.amount ?? 0),
-      vehicleLabel: expense.vehicle ? this.getVehicleLabel(expense.vehicle) : null,
+      vehicleLabel: expense.vehicle
+        ? this.getVehicleLabel(expense.vehicle)
+        : null,
       expenseDate: this.toIsoString(expense.expenseDate) ?? '',
     };
   }
@@ -378,6 +382,8 @@ export class DashboardService {
       return null;
     }
 
-    return date instanceof Date ? date.toISOString() : new Date(date).toISOString();
+    return date instanceof Date
+      ? date.toISOString()
+      : new Date(date).toISOString();
   }
 }

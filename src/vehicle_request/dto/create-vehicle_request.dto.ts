@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsIn, IsString, IsNumber, IsInt, IsEnum } from 'class-validator';
+import {
+  IsOptional,
+  IsIn,
+  IsString,
+  IsNumber,
+  IsInt,
+  IsEnum,
+} from 'class-validator';
 import { RequestStatus } from '../entities/vehicle_request.entity';
 
 export class CreateVehicleRequestDto {
@@ -56,4 +63,3 @@ export class CreateVehicleRequestDto {
   @IsEnum(RequestStatus)
   status?: RequestStatus;
 }
-

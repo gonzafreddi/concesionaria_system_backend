@@ -151,7 +151,10 @@ export class VehiclesService {
   }
 
   async findOne(id: number): Promise<VehicleDetailDto> {
-    const vehicle = await this.getVehicleEntityById(id, ['purchases', 'images']);
+    const vehicle = await this.getVehicleEntityById(id, [
+      'purchases',
+      'images',
+    ]);
     return this.mapToVehicleDetail(vehicle);
   }
 

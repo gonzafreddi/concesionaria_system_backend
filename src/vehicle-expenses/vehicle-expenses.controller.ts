@@ -24,7 +24,9 @@ import { VehicleExpensesService } from './vehicle-expenses.service';
 @ApiTags('vehicle-expenses')
 @Controller('vehicles/:vehicleId/expenses')
 export class VehicleExpensesController {
-  constructor(private readonly vehicleExpensesService: VehicleExpensesService) {}
+  constructor(
+    private readonly vehicleExpensesService: VehicleExpensesService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Crear un gasto para un vehículo' })

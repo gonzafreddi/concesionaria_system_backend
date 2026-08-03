@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { DeepPartial, In, Repository } from 'typeorm';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import {
@@ -121,12 +121,13 @@ export class VehiclesService {
   }
 
   create(createVehicleDto: CreateVehicleDto) {
-    const vehicle = this.vehiclesRepository.create({
+    const vehiclePayload: DeepPartial<Vehicle> = {
       ...createVehicleDto,
       status: createVehicleDto.status ?? VehicleStatus.PENDING_INSPECTION,
       entryType: createVehicleDto.entryType ?? VehicleEntryType.DIRECT_PURCHASE,
       ownerClientId: createVehicleDto.ownerClientId ?? null,
-    } as any);
+    };
+    const vehicle = this.vehiclesRepository.create(vehiclePayload);
     return this.vehiclesRepository.save(vehicle);
   }
 

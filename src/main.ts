@@ -51,4 +51,4 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   logger.log(`Nest application started and listening on port ${port}`);
 }
-bootstrap();
+void bootstrap();

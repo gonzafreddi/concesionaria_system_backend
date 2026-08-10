@@ -17,13 +17,8 @@ export class LoggerMiddleware implements NestMiddleware {
     const startedAt = Date.now();
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
     const url = req.originalUrl || req.url;
-    const requestBody = this.shouldLogBody(req.method, url)
-      ? ` - Body: ${this.serializeBody(req.body)}`
-      : '';
 
-    this.logger.log(
-      `Incoming request ${req.method} ${url} - IP: ${ip}${requestBody}`,
-    );
+    this.logger.log(`Incoming request ${req.method} ${url} - IP: ${ip}`);
 
     res.on('finish', () => {
       const durationMs = Date.now() - startedAt;
@@ -37,28 +32,5 @@ export class LoggerMiddleware implements NestMiddleware {
     });
 
     next();
-  }
-
-  private shouldLogBody(method: string, url: string): boolean {
-    const normalizedMethod = method.toUpperCase();
-    const normalizedPath = url.split('?')[0].toLowerCase();
-    const methodsWithBody = ['POST', 'PUT', 'PATCH', 'DELETE'];
-
-    return (
-      methodsWithBody.includes(normalizedMethod) &&
-      normalizedPath !== '/auth/login'
-    );
-  }
-
-  private serializeBody(body: Request['body']): string {
-    if (body === undefined) {
-      return 'undefined';
-    }
-
-    try {
-      return JSON.stringify(body);
-    } catch {
-      return '[unserializable-body]';
-    }
   }
 }

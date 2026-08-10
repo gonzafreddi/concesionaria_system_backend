@@ -10,6 +10,7 @@ import { User } from '../users/entities/user.entity';
 import { UsersModule } from '../users/users.module';
 import { RolesGuard } from './roles.guard';
 import { getJwtSecret } from '../config/environment';
+import { LoginRateLimitGuard } from './login-rate-limit.guard';
 
 /**
  * Módulo de autenticación
@@ -31,6 +32,7 @@ import { getJwtSecret } from '../config/environment';
     AuthService,
     AuthGuard,
     RolesGuard,
+    LoginRateLimitGuard,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

@@ -27,6 +27,14 @@ export class CreateInspectionDto {
   })
   @IsNumber()
   vehicleId: number;
+  @ApiPropertyOptional({
+    description: 'Nombre del perito que realiza el peritaje',
+    example: 'Carlos Gomez',
+    type: String,
+  })
+  @IsOptional()
+  @IsString()
+  appraiser?: string;
 
   // Estado General
   @ApiProperty({

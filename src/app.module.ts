@@ -26,6 +26,8 @@ import { MailModule } from './mail/mail.module';
 import { LocationsModule } from './locations/locations.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { FinanceModule } from './finance/finance.module';
+import { ServiceOrdersModule } from './service-orders/service-orders.module';
+import { AgencySettingsModule } from './agency-settings/agency-settings.module';
 import {
   getDatabaseConfig,
   shouldSynchronizeSchema,
@@ -60,6 +62,8 @@ import {
     LocationsModule,
     ExpensesModule,
     FinanceModule,
+    ServiceOrdersModule,
+    AgencySettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

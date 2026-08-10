@@ -1,4 +1,11 @@
-import { Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -9,6 +16,7 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Public } from './decorators/public.decorator';
+import { LoginRateLimitGuard } from './login-rate-limit.guard';
 
 /**
  * Controlador de autenticación
@@ -25,6 +33,7 @@ export class AuthController {
    */
   @Post('login')
   @Public()
+  @UseGuards(LoginRateLimitGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Login de usuario',
@@ -86,6 +95,7 @@ export class AuthController {
    */
   @Post('verify')
   @Public()
+  @UseGuards(LoginRateLimitGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Verificar token JWT',

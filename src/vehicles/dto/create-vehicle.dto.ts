@@ -83,6 +83,20 @@ export class CreateVehicleDto {
   @IsString()
   vehiclePlate: string;
 
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    example: '9BWZZZ377VT004251',
+  })
+  @IsOptional()
+  @IsString()
+  chassisNumber?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, example: 'CFZ123456' })
+  @IsOptional()
+  @IsString()
+  engineNumber?: string | null;
+
   @ApiProperty({ required: false, nullable: true })
   @IsOptional()
   @IsInt()

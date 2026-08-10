@@ -62,6 +62,12 @@ export class Vehicle {
   @Column({ unique: true })
   vehiclePlate: string;
 
+  @Column({ name: 'chassis_number', type: 'varchar', nullable: true })
+  chassisNumber: string | null;
+
+  @Column({ name: 'engine_number', type: 'varchar', nullable: true })
+  engineNumber: string | null;
+
   @Column()
   year: number;
 

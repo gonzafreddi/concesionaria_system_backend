@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { LoggerMiddleware } from './logger.middleware';
 
 describe('LoggerMiddleware', () => {
-  it('logs incoming request body and completed request details', () => {
+  it('logs incoming request metadata and completed request details', () => {
     const middleware = new LoggerMiddleware();
     const next = jest.fn();
     const handlers: Record<string, () => void> = {};
@@ -36,9 +36,7 @@ describe('LoggerMiddleware', () => {
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringContaining('Incoming request POST /payments'),
     );
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Body: {"saleId":7,"amount":1500}'),
-    );
+    expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining('Body:'));
 
     handlers.finish();
 

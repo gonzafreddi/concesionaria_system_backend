@@ -140,6 +140,18 @@ describe('DashboardService', () => {
         acquisitionPrice: '8000000',
         expenses: [],
       },
+      {
+        id: 3,
+        type: VehicleType.USED,
+        brand: 'Fiat',
+        model: 'Cronos',
+        vehiclePlate: 'AC789DE',
+        status: VehicleStatus.AVAILABLE,
+        entryType: VehicleEntryType.DIRECT_PURCHASE,
+        price: '0',
+        acquisitionPrice: '5000000',
+        expenses: [],
+      },
     ] as Vehicle[]);
     repositories.expenses.find.mockResolvedValue([
       {
@@ -200,20 +212,21 @@ describe('DashboardService', () => {
       where: { status: RequestStatus.OPEN },
     });
     expect(result.summary).toEqual({
-      vehiclesTotal: 2,
-      vehiclesAvailable: 1,
+      vehiclesTotal: 3,
+      vehiclesAvailable: 2,
       vehiclesReserved: 1,
       vehiclesSold: 0,
       clientsTotal: 8,
       salesTotal: 1,
       salesConfirmed: 0,
       pendingBalanceAmount: 7500000,
-      stockValue: 12500000,
-      inventoryValue: 12500000,
-      inventoryCost: 10500000,
+      stockValue: 17500000,
+      inventoryValue: 17500000,
+      inventoryCost: 15500000,
       estimatedInventoryProfit: 2000000,
     });
-    expect(result.inventory.stockValue).toBe(12500000);
+    expect(result.inventory.stockValue).toBe(17500000);
+    expect(result.inventory.lowMarginVehicles[0].salePrice).toBe(5000000);
     expect(result.sales.pendingAmount).toBe(7500000);
     expect(result.expenses.total).toBe(500000);
     expect(result.operations.preSaleInProgress).toBe(1);

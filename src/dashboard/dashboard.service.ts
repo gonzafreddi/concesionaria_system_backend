@@ -261,8 +261,9 @@ export class DashboardService {
       0,
     );
     const acquisitionPrice = Number(vehicle.acquisitionPrice ?? 0);
-    const salePrice = Number(vehicle.price ?? 0);
     const totalCost = acquisitionPrice + expensesTotal;
+    const listedSalePrice = Number(vehicle.price ?? 0);
+    const salePrice = listedSalePrice > 0 ? listedSalePrice : totalCost;
 
     return {
       id: vehicle.id,

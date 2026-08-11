@@ -187,6 +187,7 @@ export class DashboardService {
         salesTotal: sales.length,
         salesConfirmed: confirmedSales.length,
         pendingBalanceAmount,
+        stockValue: inventoryValue,
         inventoryValue,
         inventoryCost,
         estimatedInventoryProfit: inventoryEstimatedProfit,
@@ -194,6 +195,7 @@ export class DashboardService {
       inventory: {
         byStatus: this.countBy(vehicles, (vehicle) => vehicle.status),
         byEntryType: this.countBy(vehicles, (vehicle) => vehicle.entryType),
+        stockValue: inventoryValue,
         availableVehiclesValue: inventoryValue,
         availableVehiclesCost: inventoryCost,
         availableVehiclesExpenses: inventoryExpenses,

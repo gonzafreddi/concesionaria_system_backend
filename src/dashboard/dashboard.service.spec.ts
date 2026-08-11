@@ -208,10 +208,12 @@ describe('DashboardService', () => {
       salesTotal: 1,
       salesConfirmed: 0,
       pendingBalanceAmount: 7500000,
+      stockValue: 12500000,
       inventoryValue: 12500000,
       inventoryCost: 10500000,
       estimatedInventoryProfit: 2000000,
     });
+    expect(result.inventory.stockValue).toBe(12500000);
     expect(result.sales.pendingAmount).toBe(7500000);
     expect(result.expenses.total).toBe(500000);
     expect(result.operations.preSaleInProgress).toBe(1);

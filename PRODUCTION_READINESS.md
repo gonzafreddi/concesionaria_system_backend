@@ -23,6 +23,9 @@ ENABLE_SWAGGER=false
 TYPEORM_SYNCHRONIZE=false
 CORS_ORIGINS=https://frontend.example.com
 JWT_SECRET=generar-un-secreto-largo-y-aleatorio
+# Opcional segun dominio de frontend/backend
+# REFRESH_COOKIE_DOMAIN=.example.com
+# REFRESH_COOKIE_SAME_SITE=lax
 DB_HOST=postgres-host
 DB_PORT=5432
 DB_USER=postgres-user
@@ -48,6 +51,78 @@ ADMIN_RESET_PASSWORD=false
 - Confirmar que `/health` responde `200` despues del deploy.
 - Probar login, carga de documentos, carga de imagenes y flujo de venta en staging.
 - Cambiar la contraseña inicial del admin despues del primer login.
+- Confirmar en el navegador que `POST /auth/login` setea la cookie `refresh_token` como `HttpOnly`.
+- Confirmar que al recargar la pagina el frontend llama `POST /auth/refresh` y recupera sesion sin token en `localStorage`.
+
+## Sesion y cookies
+
+La sesion tiene dos piezas:
+
+- `access_token`: token corto que el frontend mantiene solo en memoria y manda como `Authorization: Bearer ...`.
+- `refresh_token`: token largo que el backend guarda en cookie `HttpOnly`. JavaScript no puede leerlo; solo el navegador lo envia automaticamente a `/auth/refresh`.
+
+Flujo normal:
+
+```text
+Login:
+Browser/Frontend          Backend
+      | POST /auth/login     |
+      | email/password       |
+      |--------------------->|
+      |                      | valida usuario
+      |                      | crea access_token + refresh_token
+      | access_token         |
+      | Set-Cookie refresh   |
+      |<---------------------|
+      | guarda access token solo en memoria
+```
+
+Renovacion:
+
+```text
+API request con access vencido:
+Browser/Frontend          Backend
+      | GET /recurso         |
+      | Bearer access viejo  |
+      |--------------------->|
+      | 401                  |
+      |<---------------------|
+      | POST /auth/refresh   |
+      | cookie refresh_token |
+      |--------------------->|
+      | access_token nuevo   |
+      |<---------------------|
+      | reintenta GET /recurso con Bearer nuevo
+```
+
+Escenarios de deploy:
+
+```text
+Caso A: proxy bajo el mismo sitio. Recomendado/simple.
+
+https://midominio.com
+  /               -> frontend
+  /backend-api    -> backend
+
+Env backend:
+REFRESH_COOKIE_DOMAIN no se define
+REFRESH_COOKIE_SAME_SITE no se define, usa lax
+```
+
+```text
+Caso B: frontend y backend en subdominios distintos.
+
+https://app.midominio.com  -> frontend
+https://api.midominio.com  -> backend
+
+Env backend:
+REFRESH_COOKIE_DOMAIN=.midominio.com
+REFRESH_COOKIE_SAME_SITE=none
+
+Requiere HTTPS. SameSite=none fuerza cookie Secure.
+```
+
+Para el despliegue actual con `/backend-api`, no hace falta definir `REFRESH_COOKIE_DOMAIN` ni `REFRESH_COOKIE_SAME_SITE`.
 
 ## Seguridad aplicada
 
@@ -56,4 +131,5 @@ ADMIN_RESET_PASSWORD=false
 - `/documents` requiere usuario autenticado.
 - `/users` requiere rol `ADMIN`.
 - TypeORM no sincroniza esquema automaticamente en produccion.
+- El refresh token no se acepta como `Authorization: Bearer`; el guard solo permite tokens de tipo `access`.
 - El entrypoint de produccion es `dist/src/main.js` porque el build tambien compila scripts fuera de `src`.

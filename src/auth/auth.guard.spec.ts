@@ -28,7 +28,12 @@ describe('AuthGuard', () => {
   });
 
   it('attaches the decoded user for authenticated routes', () => {
-    const payload = { id: 1, email: 'admin@test.com', role: 'ADMIN' };
+    const payload = {
+      id: 1,
+      email: 'admin@test.com',
+      role: 'ADMIN',
+      tokenType: 'access',
+    };
     const jwtService = {
       verify: jest.fn().mockReturnValue(payload),
     } as unknown as JwtService;

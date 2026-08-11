@@ -45,9 +45,12 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const payload = this.jwtService.verify(token);
-      // Asignar el payload al request para usar en handlers
+      const payload = this.jwtService.verify<Record<string, unknown>>(token);
+
+      if (payload.tokenType !== 'access') {
+        throw new UnauthorizedException('Invalid token type');
+      }
+
       (request as unknown as Record<string, unknown>)['user'] = payload;
       return true;
     } catch {

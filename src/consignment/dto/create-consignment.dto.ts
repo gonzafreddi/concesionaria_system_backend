@@ -46,6 +46,20 @@ export class CreateConsignmentDto {
   estimatedSalePrice: number;
 
   @ApiPropertyOptional({
+    example: 60,
+    description: 'Duracion de la consignacion expresada en dias',
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === '' || value === null || value === undefined
+      ? undefined
+      : Number(value),
+  )
+  @IsInt()
+  @Min(1)
+  durationDays?: number;
+
+  @ApiPropertyOptional({
     enum: ConsignmentStatus,
     default: ConsignmentStatus.ACTIVE,
   })

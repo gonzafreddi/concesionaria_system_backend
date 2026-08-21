@@ -53,6 +53,15 @@ export class AgencySetting {
   @Column({ type: 'varchar', nullable: true })
   website: string | null;
 
+  @Column({
+    name: 'consignment_early_termination_fee',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
+  consignmentEarlyTerminationFee: number | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

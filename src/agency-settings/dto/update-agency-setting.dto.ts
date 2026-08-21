@@ -1,5 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  IsEmail,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class UpdateAgencySettingDto {
   @ApiPropertyOptional({ nullable: true, example: 'AUTO3 S.A.' })
@@ -88,4 +96,19 @@ export class UpdateAgencySettingDto {
   @IsOptional()
   @IsString()
   website?: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 200000,
+    description: 'Monto por rescision anticipada de consignacion',
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === '' || value === null || value === undefined
+      ? null
+      : Number(value),
+  )
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  consignmentEarlyTerminationFee?: number | null;
 }

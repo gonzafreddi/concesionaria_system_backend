@@ -53,6 +53,7 @@ export class AgencySettingsService {
       taxCondition: null,
       postalCode: null,
       website: null,
+      consignmentEarlyTerminationFee: null,
     });
   }
 }

@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Client } from '../../clients/entities/client.entity';
+import { GeneratedDocument } from '../../documents/entities/generated-document.entity';
 import { User } from '../../users/entities/user.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 import { QuoteActivity } from './quote-activity.entity';
@@ -76,6 +77,9 @@ export class Quote {
   @Column({ name: 'lost_reason', type: 'text', nullable: true })
   lostReason: string | null;
 
+  @Column({ name: 'document_id', type: 'uuid', nullable: true })
+  documentId: string | null;
+
   @Column({ type: 'enum', enum: QuoteStatus, default: QuoteStatus.NEW })
   status: QuoteStatus;
 
@@ -101,6 +105,10 @@ export class Quote {
   })
   @JoinColumn({ name: 'vehicle_id' })
   vehicle: Vehicle;
+
+  @ManyToOne(() => GeneratedDocument, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'document_id' })
+  document: GeneratedDocument | null;
 
   @OneToMany(() => QuoteActivity, (activity) => activity.quote)
   activities: QuoteActivity[];

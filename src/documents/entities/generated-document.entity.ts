@@ -31,6 +31,7 @@ export enum RelatedEntityType {
   VEHICLE = 'VEHICLE',
   CLIENT = 'CLIENT',
   CONSIGNMENT = 'CONSIGNMENT',
+  QUOTE = 'QUOTE',
 }
 
 @Entity('generated_documents')

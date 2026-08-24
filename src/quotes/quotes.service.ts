@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, LessThan, Repository } from 'typeorm';
 import { Client } from '../clients/entities/client.entity';
+import { GeneratedDocument } from '../documents/entities/generated-document.entity';
 import { User } from '../users/entities/user.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { ChangeQuoteStatusDto } from './dto/change-quote-status.dto';
@@ -40,6 +41,8 @@ export class QuotesService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Vehicle)
     private readonly vehicleRepository: Repository<Vehicle>,
+    @InjectRepository(GeneratedDocument)
+    private readonly documentRepository: Repository<GeneratedDocument>,
   ) {}
 
   async create(createQuoteDto: CreateQuoteDto): Promise<Quote> {
@@ -98,6 +101,7 @@ export class QuotesService {
         'client',
         'vehicle',
         'user',
+        'document',
         'activities',
         'activities.createdBy',
       ],
@@ -275,6 +279,33 @@ export class QuotesService {
     if (dto.userId) {
       await this.ensureUser(dto.userId);
     }
+  }
+
+  async attachDocument(quoteId: number, documentId: string): Promise<Quote> {
+    const quote = await this.findOne(quoteId);
+
+    const document = await this.documentRepository.findOne({
+      where: { id: documentId },
+    });
+
+    if (!document) {
+      throw new NotFoundException(`Documento ${documentId} no encontrado`);
+    }
+
+    quote.documentId = documentId;
+    await this.quoteRepository.save(quote);
+
+    await this.activityRepository.save(
+      this.activityRepository.create({
+        quoteId: quote.id,
+        createdById: quote.userId,
+        type: QuoteActivityType.NOTE,
+        title: 'Documento de cotización adjunto',
+        description: `Se generó y guardó el PDF de la cotización (${documentId}).`,
+      }),
+    );
+
+    return this.findOne(quoteId);
   }
 
   private async ensureUser(userId: number) {

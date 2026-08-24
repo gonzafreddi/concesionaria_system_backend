@@ -11,6 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { AttachQuoteDocumentDto } from './dto/attach-quote-document.dto';
 import { ChangeQuoteStatusDto } from './dto/change-quote-status.dto';
 import { CreateQuoteActivityDto } from './dto/create-quote-activity.dto';
 import { CreateQuoteDto } from './dto/create-quote.dto';
@@ -76,6 +77,17 @@ export class QuotesController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.quotesService.remove(id);
+  }
+
+  @Post(':id/document')
+  attachDocument(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() attachQuoteDocumentDto: AttachQuoteDocumentDto,
+  ) {
+    return this.quotesService.attachDocument(
+      id,
+      attachQuoteDocumentDto.documentId,
+    );
   }
 
   @Get(':id/activities')

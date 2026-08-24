@@ -15,6 +15,7 @@ import {
 } from './entities/generated-document.entity';
 import { Sale } from '../sales/entities/sale.entity';
 import { Purchase } from '../purchase/entities/purchase.entity';
+import { Quote } from '../quotes/entities/quote.entity';
 
 const ALLOWED_MIME_TYPES = ['application/pdf'];
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
@@ -28,6 +29,8 @@ export class GeneratedDocumentsService {
     private readonly salesRepository: Repository<Sale>,
     @InjectRepository(Purchase)
     private readonly purchaseRepository: Repository<Purchase>,
+    @InjectRepository(Quote)
+    private readonly quoteRepository: Repository<Quote>,
   ) {}
 
   async uploadDocument(
@@ -147,6 +150,7 @@ export class GeneratedDocumentsService {
     const requiresNumericId = [
       RelatedEntityType.SALE,
       RelatedEntityType.PURCHASE,
+      RelatedEntityType.QUOTE,
     ].includes(createDto.relatedEntityType);
 
     if (requiresNumericId && (!Number.isInteger(entityId) || entityId <= 0)) {
@@ -175,6 +179,18 @@ export class GeneratedDocumentsService {
       if (!purchaseExists) {
         throw new NotFoundException(
           'Compra ' + createDto.relatedEntityId + ' no encontrada',
+        );
+      }
+    }
+
+    if (createDto.relatedEntityType === RelatedEntityType.QUOTE) {
+      const quoteExists = await this.quoteRepository.exists({
+        where: { id: entityId },
+      });
+
+      if (!quoteExists) {
+        throw new NotFoundException(
+          'Cotizacion ' + createDto.relatedEntityId + ' no encontrada',
         );
       }
     }

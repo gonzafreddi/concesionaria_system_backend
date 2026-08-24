@@ -111,6 +111,10 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { email } });
   }
 
+  async save(user: User): Promise<User> {
+    return this.usersRepository.save(user);
+  }
+
   private async ensureAdminCanChangeRole(
     user: User,
     newRole: UserRole,

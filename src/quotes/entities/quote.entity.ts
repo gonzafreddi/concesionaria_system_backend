@@ -47,10 +47,21 @@ export class Quote {
   @Column({ type: 'varchar', length: 80, nullable: true })
   source: string | null;
 
-  @Column({ name: 'payment_method', type: 'varchar', length: 80, nullable: true })
+  @Column({
+    name: 'payment_method',
+    type: 'varchar',
+    length: 80,
+    nullable: true,
+  })
   paymentMethod: string | null;
 
-  @Column({ name: 'down_payment', type: 'decimal', precision: 12, scale: 2, nullable: true })
+  @Column({
+    name: 'down_payment',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    nullable: true,
+  })
   downPayment: number | null;
 
   @Column({ name: 'financing_details', type: 'text', nullable: true })
@@ -78,11 +89,16 @@ export class Quote {
   @JoinColumn({ name: 'client_id' })
   client: Client;
 
-  @ManyToOne(() => User, (user) => user.quotes, { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => User, (user) => user.quotes, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'user_id' })
   user: User | null;
 
-  @ManyToOne(() => Vehicle, (vehicle) => vehicle.quotes, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Vehicle, (vehicle) => vehicle.quotes, {
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({ name: 'vehicle_id' })
   vehicle: Vehicle;
 

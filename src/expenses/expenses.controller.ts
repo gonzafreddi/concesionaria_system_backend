@@ -21,8 +21,11 @@ import { FindExpensesQueryDto } from './dto/find-expenses-query.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { Expense } from './entities/expense.entity';
 import { ExpensesService } from './expenses.service';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 
 @ApiTags('expenses')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('expenses')
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}

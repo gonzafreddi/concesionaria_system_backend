@@ -19,11 +19,18 @@ import {
 import type { CookieOptions, Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { Public } from './decorators/public.decorator';
 import { LoginRateLimitGuard } from './login-rate-limit.guard';
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
 const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+type AuthenticatedRequest = Request & {
+  user?: {
+    id?: number;
+  };
+};
 
 @ApiTags('auth')
 @Controller('auth')
@@ -87,6 +94,29 @@ export class AuthController {
       statusCode: 200,
       message: 'Logout successful',
     };
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Cambiar la contraseña del usuario autenticado',
+    description:
+      'Permite a un usuario cambiar su propia contraseña proporcionando la contraseña actual.',
+  })
+  @ApiBody({ type: ChangePasswordDto })
+  @ApiResponse({ status: 200, description: 'Contraseña actualizada' })
+  @ApiResponse({ status: 401, description: 'Contraseña actual incorrecta' })
+  async changePassword(
+    @Req() request: Request,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    const userId = (request as AuthenticatedRequest).user?.id;
+
+    if (!userId) {
+      throw new UnauthorizedException('Usuario no autenticado');
+    }
+
+    return this.authService.changePassword(userId, changePasswordDto);
   }
 
   @Post('verify')

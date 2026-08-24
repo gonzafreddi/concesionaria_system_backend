@@ -89,4 +89,13 @@ export class CreatePreSaleDocumentationDto {
   })
   @IsNumber()
   vehicleId: number;
+
+  @ApiPropertyOptional({
+    description: 'Process costs and expenses',
+    example: 'Gestoría $25.000',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  processCosts?: string | null;
 }

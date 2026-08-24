@@ -109,4 +109,13 @@ export class CreatePreSaleAestheticDto {
   })
   @IsNumber()
   vehicleId: number;
+
+  @ApiPropertyOptional({
+    description: 'Process costs and expenses',
+    example: 'Lavado y detailing $15.000',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  processCosts?: string | null;
 }

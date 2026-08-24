@@ -44,7 +44,10 @@ describe('LoggerMiddleware', () => {
       expect.stringContaining('Completed request POST /payments - 200'),
     );
     expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining('User: admin@test.com (id: 42, role: admin)'),
+      expect.stringContaining('User: (id: 42, role: admin)'),
+    );
+    expect(logSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining('admin@test.com'),
     );
     logSpy.mockRestore();
   });

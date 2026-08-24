@@ -1,30 +1,5 @@
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'quotes_status_enum') THEN
-    CREATE TYPE quotes_status_enum AS ENUM (
-      'NEW',
-      'CONTACTED',
-      'QUOTED',
-      'FOLLOW_UP',
-      'NEGOTIATION',
-      'WON',
-      'LOST',
-      'EXPIRED'
-    );
-  END IF;
-END $$;
-
-ALTER TYPE quotes_status_enum ADD VALUE IF NOT EXISTS 'NEW';
-ALTER TYPE quotes_status_enum ADD VALUE IF NOT EXISTS 'CONTACTED';
-ALTER TYPE quotes_status_enum ADD VALUE IF NOT EXISTS 'QUOTED';
-ALTER TYPE quotes_status_enum ADD VALUE IF NOT EXISTS 'FOLLOW_UP';
-ALTER TYPE quotes_status_enum ADD VALUE IF NOT EXISTS 'NEGOTIATION';
-ALTER TYPE quotes_status_enum ADD VALUE IF NOT EXISTS 'WON';
-ALTER TYPE quotes_status_enum ADD VALUE IF NOT EXISTS 'LOST';
-ALTER TYPE quotes_status_enum ADD VALUE IF NOT EXISTS 'EXPIRED';
-
-DO $$
-BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'quotes') THEN
     CREATE TABLE quotes (
       id SERIAL PRIMARY KEY,
@@ -100,29 +75,6 @@ ALTER TABLE quotes ALTER COLUMN quoted_price SET NOT NULL;
 ALTER TABLE quotes ALTER COLUMN status SET DEFAULT 'NEW';
 ALTER TABLE quotes ALTER COLUMN created_at SET DEFAULT now();
 ALTER TABLE quotes ALTER COLUMN updated_at SET DEFAULT now();
-
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'quote_activities_type_enum') THEN
-    CREATE TYPE quote_activities_type_enum AS ENUM (
-      'NOTE',
-      'CALL',
-      'WHATSAPP',
-      'EMAIL',
-      'MEETING',
-      'STATUS_CHANGE',
-      'TASK'
-    );
-  END IF;
-END $$;
-
-ALTER TYPE quote_activities_type_enum ADD VALUE IF NOT EXISTS 'NOTE';
-ALTER TYPE quote_activities_type_enum ADD VALUE IF NOT EXISTS 'CALL';
-ALTER TYPE quote_activities_type_enum ADD VALUE IF NOT EXISTS 'WHATSAPP';
-ALTER TYPE quote_activities_type_enum ADD VALUE IF NOT EXISTS 'EMAIL';
-ALTER TYPE quote_activities_type_enum ADD VALUE IF NOT EXISTS 'MEETING';
-ALTER TYPE quote_activities_type_enum ADD VALUE IF NOT EXISTS 'STATUS_CHANGE';
-ALTER TYPE quote_activities_type_enum ADD VALUE IF NOT EXISTS 'TASK';
 
 CREATE TABLE IF NOT EXISTS quote_activities (
   id SERIAL PRIMARY KEY,

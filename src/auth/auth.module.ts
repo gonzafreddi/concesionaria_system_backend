@@ -22,9 +22,9 @@ import { LoginRateLimitGuard } from './login-rate-limit.guard';
     TypeOrmModule.forFeature([User]),
     JwtModule.register({
       secret: getJwtSecret(),
-      signOptions: {
-        expiresIn: '1d',
-      },
+      // La expiración se define explícitamente en AuthService:
+      // access_token = 15m, refresh_token = 7d.
+      // No se usa un signOptions global para evitar tokens largos por defecto.
     }),
   ],
   controllers: [AuthController],

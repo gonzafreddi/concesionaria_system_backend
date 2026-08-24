@@ -19,8 +19,11 @@ import { ConsignmentService } from './consignment.service';
 import { CreateConsignmentDto } from './dto/create-consignment.dto';
 import { UpdateConsignmentDto } from './dto/update-consignment.dto';
 import { Consignment } from './entities/consignment.entity';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 
 @ApiTags('consignments')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('consignments')
 export class ConsignmentController {
   constructor(private readonly consignmentService: ConsignmentService) {}

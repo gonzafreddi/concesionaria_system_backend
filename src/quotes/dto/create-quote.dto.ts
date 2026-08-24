@@ -1,5 +1,13 @@
 import { Transform } from 'class-transformer';
-import { IsEnum, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { QuoteStatus } from '../entities/quote.entity';
 
 export class CreateQuoteDto {
@@ -39,7 +47,11 @@ export class CreateQuoteDto {
   paymentMethod?: string | null;
 
   @IsOptional()
-  @Transform(({ value }) => (value === '' || value === null || value === undefined ? null : Number(value)))
+  @Transform(({ value }) =>
+    value === '' || value === null || value === undefined
+      ? null
+      : Number(value),
+  )
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   downPayment?: number | null;

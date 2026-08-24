@@ -18,8 +18,11 @@ import {
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Payment } from './entities/payment.entity';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 
 @ApiTags('payments')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SELLER)
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
@@ -76,6 +79,7 @@ export class PaymentsController {
   }
 
   @Patch(':id/confirm')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Confirmar un pago',
     description:
@@ -94,6 +98,7 @@ export class PaymentsController {
   }
 
   @Patch(':id/reject')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Rechazar un pago',
     description: 'Cambia el estado del pago a REJECTED.',
@@ -111,6 +116,7 @@ export class PaymentsController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Eliminar un pago',
     description: 'Elimina un pago solo si no está confirmado.',

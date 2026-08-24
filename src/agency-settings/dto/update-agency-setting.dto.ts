@@ -111,4 +111,19 @@ export class UpdateAgencySettingDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   consignmentEarlyTerminationFee?: number | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 3.5,
+    description: 'Porcentaje usado para estimar el costo de transferencia',
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === '' || value === null || value === undefined
+      ? null
+      : Number(value),
+  )
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  transferPercentage?: number | null;
 }

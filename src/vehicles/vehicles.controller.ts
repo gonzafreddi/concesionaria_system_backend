@@ -24,6 +24,8 @@ import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehicleSaleOptionDto } from './dto/vehicle-sale-option.dto';
 import { VehicleDetailDto } from './dto/vehicle-detail.dto';
 import { MoveVehicleLocationDto } from './dto/move-vehicle-location.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 
 type AuthenticatedRequest = Request & {
   user?: {
@@ -32,11 +34,13 @@ type AuthenticatedRequest = Request & {
 };
 
 @ApiTags('vehicles')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SELLER)
 @Controller('vehicles')
 export class VehiclesController {
   constructor(private readonly vehiclesService: VehiclesService) {}
 
   @Post()
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   create(@Body() createVehicleDto: CreateVehicleDto) {
     return this.vehiclesService.create(createVehicleDto);
   }
@@ -101,6 +105,7 @@ export class VehiclesController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateVehicleDto: UpdateVehicleDto,
@@ -109,12 +114,14 @@ export class VehiclesController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.vehiclesService.remove(id);
   }
 
   @ApiOperation({ summary: 'Mover un vehiculo a otra ubicacion' })
   @Patch(':id/location')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   moveLocation(
     @Param('id', ParseIntPipe) id: number,
     @Body() moveVehicleLocationDto: MoveVehicleLocationDto,

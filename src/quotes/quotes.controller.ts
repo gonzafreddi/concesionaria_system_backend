@@ -10,6 +10,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { ChangeQuoteStatusDto } from './dto/change-quote-status.dto';
 import { CreateQuoteActivityDto } from './dto/create-quote-activity.dto';
 import { CreateQuoteDto } from './dto/create-quote.dto';
@@ -17,7 +18,11 @@ import { UpdateQuoteActivityDto } from './dto/update-quote-activity.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
 import { QuoteStatus } from './entities/quote.entity';
 import { QuotesService } from './quotes.service';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 
+@ApiTags('quotes')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SELLER)
 @Controller('quotes')
 export class QuotesController {
   constructor(private readonly quotesService: QuotesService) {}
@@ -59,6 +64,7 @@ export class QuotesController {
   }
 
   @Patch(':id/status')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   changeStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() changeQuoteStatusDto: ChangeQuoteStatusDto,
@@ -67,6 +73,7 @@ export class QuotesController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.quotesService.remove(id);
   }

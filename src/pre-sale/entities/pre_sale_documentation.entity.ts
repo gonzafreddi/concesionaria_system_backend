@@ -29,6 +29,9 @@ export class PreSaleDocumentation {
   @Column({ nullable: true })
   extraObservations?: string;
 
+  @Column({ name: 'process_costs', type: 'text', nullable: true })
+  processCosts?: string | null;
+
   @OneToOne(() => Vehicle)
   @JoinColumn()
   vehicle: Vehicle;

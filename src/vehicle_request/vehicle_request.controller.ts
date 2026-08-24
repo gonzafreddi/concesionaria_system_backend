@@ -9,12 +9,15 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 import { VehicleRequestService } from './vehicle_request.service';
 import { CreateVehicleRequestDto } from './dto/create-vehicle_request.dto';
 import { UpdateVehicleRequestDto } from './dto/update-vehicle_request.dto';
 import { NotifyVehicleArrivalDto } from './dto/notify-vehicle-arrival.dto';
 
 @ApiTags('vehicle-requests')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SELLER)
 @Controller('vehicle-request')
 export class VehicleRequestController {
   constructor(private readonly vehicleRequestService: VehicleRequestService) {}

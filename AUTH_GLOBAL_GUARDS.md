@@ -197,6 +197,43 @@ createUser() {
 }
 ```
 
+## Matriz de permisos por modulo
+
+La siguiente tabla resume qué roles pueden acceder a cada recurso. Los endpoints que no aparecen con `@Roles(...)` requieren unicamente estar autenticados.
+
+| Modulo | ADMIN | MANAGER | SELLER | Notas |
+|--------|:-----:|:-------:|:------:|-------|
+| `users` | ✓ | ✗ | ✗ | Solo ADMIN gestiona usuarios |
+| `agency-settings` | ✓ (escritura) | ✓ (lectura) | ✗ | Actualizacion solo ADMIN |
+| `finance` | ✓ | ✓ | ✗ | Resumen financiero |
+| `dashboard` | ✓ | ✓ | ✗ | Metricas generales |
+| `expenses` | ✓ | ✓ | ✗ | Gastos generales |
+| `vehicle-expenses` | ✓ | ✓ | ✗ | Costos por vehiculo |
+| `purchase` | ✓ | ✓ | ✗ | Compras a terceros |
+| `consignments` | ✓ | ✓ | ✗ | Consignaciones |
+| `pre-sale` | ✓ | ✓ | ✗ | Pre-recepcion de vehiculos |
+| `locations` | ✓ | ✓ | ✗ | Ubicaciones/depositos |
+| `sales` | ✓ | ✓ | ✓ | Anular/borrar solo ADMIN/MANAGER |
+| `payments` | ✓ | ✓ | ✓ | Confirmar/rechazar/eliminar solo ADMIN/MANAGER |
+| `quotes` | ✓ | ✓ | ✓ | Cambiar estado/borrar solo ADMIN/MANAGER |
+| `vehicles` | ✓ | ✓ | ✓ | Alta/baja/modificacion y movimiento de ubicacion solo ADMIN/MANAGER |
+| `service-orders` | ✓ | ✓ | ✓ | Escritura solo ADMIN/MANAGER |
+| `clients` | ✓ | ✓ | ✓ | ABM de clientes |
+| `inspections` | ✓ | ✓ | ✓ | Inspecciones |
+| `vehicle-request` | ✓ | ✓ | ✓ | Solicitudes de vehiculos |
+| `documents` | ✓ | ✓ | ✓ | Cualquier usuario autenticado |
+| `vehicle-images` | ✓ | ✓ | ✓ | Cualquier usuario autenticado |
+| `health` | ✓ | ✓ | ✓ | Publico (`@Public()`) |
+| `auth/login`, `auth/refresh`, `auth/verify` | - | - | - | Publicos (`@Public()`) |
+
+> **Regla general**: `ADMIN` puede todo. `MANAGER` administra stock, finanzas, compras y operaciones. `SELLER` opera el dia a dia (ventas, cotizaciones, clientes) pero no puede anular operaciones, confirmar pagos ni ver finanzas.
+
+## Tokens de sesion
+
+- `access_token`: JWT corto (15 minutos) que el frontend envia como `Authorization: Bearer ...`.
+- `refresh_token`: JWT largo (7 dias) que el backend entrega en cookie `HttpOnly` y lee unicamente en `POST /auth/refresh`.
+- El `AuthGuard` rechaza tokens cuyo `tokenType` no sea `access`.
+
 ## Que tocar si cambia algo
 
 ### Si queres cambiar que rutas son publicas

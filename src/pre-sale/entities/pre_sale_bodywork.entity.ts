@@ -36,6 +36,9 @@ export class PreSaleBodywork {
   @Column({ nullable: true })
   observations?: string;
 
+  @Column({ name: 'process_costs', type: 'text', nullable: true })
+  processCosts?: string | null;
+
   @OneToOne(() => Vehicle)
   @JoinColumn()
   vehicle: Vehicle;

@@ -30,7 +30,11 @@ export class QuoteActivity {
   @Column({ name: 'created_by_id', type: 'int', nullable: true })
   createdById: number | null;
 
-  @Column({ type: 'enum', enum: QuoteActivityType, default: QuoteActivityType.NOTE })
+  @Column({
+    type: 'enum',
+    enum: QuoteActivityType,
+    default: QuoteActivityType.NOTE,
+  })
   type: QuoteActivityType;
 
   @Column({ type: 'varchar', length: 180 })

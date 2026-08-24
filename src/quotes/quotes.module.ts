@@ -9,7 +9,9 @@ import { QuotesController } from './quotes.controller';
 import { QuotesService } from './quotes.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Quote, QuoteActivity, Client, User, Vehicle])],
+  imports: [
+    TypeOrmModule.forFeature([Quote, QuoteActivity, Client, User, Vehicle]),
+  ],
   controllers: [QuotesController],
   providers: [QuotesService],
   exports: [QuotesService],

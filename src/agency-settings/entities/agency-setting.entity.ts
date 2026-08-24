@@ -62,6 +62,15 @@ export class AgencySetting {
   })
   consignmentEarlyTerminationFee: number | null;
 
+  @Column({
+    name: 'transfer_percentage',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
+  transferPercentage: number | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, LessThan, Repository } from 'typeorm';
 import { Client } from '../clients/entities/client.entity';
@@ -9,7 +13,10 @@ import { CreateQuoteActivityDto } from './dto/create-quote-activity.dto';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteActivityDto } from './dto/update-quote-activity.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
-import { QuoteActivity, QuoteActivityType } from './entities/quote-activity.entity';
+import {
+  QuoteActivity,
+  QuoteActivityType,
+} from './entities/quote-activity.entity';
 import { Quote, QuoteStatus } from './entities/quote.entity';
 
 export interface QuoteFilters {
@@ -87,7 +94,13 @@ export class QuotesService {
   async findOne(id: number): Promise<Quote> {
     const quote = await this.quoteRepository.findOne({
       where: { id },
-      relations: ['client', 'vehicle', 'user', 'activities', 'activities.createdBy'],
+      relations: [
+        'client',
+        'vehicle',
+        'user',
+        'activities',
+        'activities.createdBy',
+      ],
       order: { activities: { createdAt: 'DESC' } },
     });
 
@@ -242,13 +255,21 @@ export class QuotesService {
 
   private async ensureRelations(dto: Partial<CreateQuoteDto>) {
     if (dto.clientId) {
-      const client = await this.clientRepository.findOne({ where: { id: dto.clientId } });
-      if (!client) throw new BadRequestException(`Cliente ${dto.clientId} no encontrado`);
+      const client = await this.clientRepository.findOne({
+        where: { id: dto.clientId },
+      });
+      if (!client)
+        throw new BadRequestException(`Cliente ${dto.clientId} no encontrado`);
     }
 
     if (dto.vehicleId) {
-      const vehicle = await this.vehicleRepository.findOne({ where: { id: dto.vehicleId } });
-      if (!vehicle) throw new BadRequestException(`Vehículo ${dto.vehicleId} no encontrado`);
+      const vehicle = await this.vehicleRepository.findOne({
+        where: { id: dto.vehicleId },
+      });
+      if (!vehicle)
+        throw new BadRequestException(
+          `Vehículo ${dto.vehicleId} no encontrado`,
+        );
     }
 
     if (dto.userId) {

@@ -1,9 +1,14 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { UsersService } from '../users/users.service';
 import { UserRole } from '../users/entities/user.entity';
-import { comparePassword } from '../utils/encrypt';
+import { comparePassword, encryptPassword } from '../utils/encrypt';
 
 type AuthSessionPayload = {
   id: number;
@@ -63,6 +68,28 @@ export class AuthService {
       data: {
         access_token: this.signAccessToken(nextPayload),
       },
+    };
+  }
+
+  async changePassword(userId: number, dto: ChangePasswordDto) {
+    const user = await this.userService.findOne(userId);
+
+    if (!comparePassword(dto.oldPassword, user.password)) {
+      throw new UnauthorizedException('Contraseña actual incorrecta');
+    }
+
+    if (dto.oldPassword === dto.newPassword) {
+      throw new BadRequestException(
+        'La nueva contraseña debe ser diferente a la actual',
+      );
+    }
+
+    user.password = encryptPassword(dto.newPassword);
+    await this.userService.save(user);
+
+    return {
+      statusCode: 200,
+      message: 'Contraseña actualizada correctamente',
     };
   }
 

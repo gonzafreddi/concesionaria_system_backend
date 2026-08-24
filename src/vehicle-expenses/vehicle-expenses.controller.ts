@@ -20,11 +20,16 @@ import { UpdateVehicleExpenseDto } from './dto/update-vehicle-expense.dto';
 import { VehicleExpenseSummaryDto } from './dto/vehicle-expense-summary.dto';
 import { VehicleExpense } from './entities/vehicle-expense.entity';
 import { VehicleExpensesService } from './vehicle-expenses.service';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 
 @ApiTags('vehicle-expenses')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('vehicles/:vehicleId/expenses')
 export class VehicleExpensesController {
-  constructor(private readonly vehicleExpensesService: VehicleExpensesService) {}
+  constructor(
+    private readonly vehicleExpensesService: VehicleExpensesService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Crear un gasto para un vehículo' })

@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { LocationSummaryDto } from '../../locations/dto/location-summary.dto';
 import {
   VehicleEntryType,
   VehicleStatus,
@@ -21,6 +22,11 @@ export class VehicleDetailDto {
 
   @ApiProperty({ example: 'AB123CD' })
   vehiclePlate: string;
+  @ApiPropertyOptional({ example: '9BWZZZ377VT004251', nullable: true })
+  chassisNumber: string | null;
+
+  @ApiPropertyOptional({ example: 'CFZ123456', nullable: true })
+  engineNumber: string | null;
 
   @ApiProperty({ example: 2021 })
   year: number;
@@ -31,16 +37,10 @@ export class VehicleDetailDto {
   @ApiProperty({ example: 24500000 })
   price: number;
 
-  @ApiPropertyOptional({
-    example: 19800000,
-    nullable: true,
-  })
+  @ApiPropertyOptional({ example: 19800000, nullable: true })
   acquisitionPrice: number | null;
 
-  @ApiPropertyOptional({
-    example: 87500,
-    nullable: true,
-  })
+  @ApiPropertyOptional({ example: 87500, nullable: true })
   mileage: number | null;
 
   @ApiPropertyOptional({
@@ -67,10 +67,12 @@ export class VehicleDetailDto {
   @ApiPropertyOptional({ example: 15, nullable: true })
   ownerClientId: number | null;
 
-  @ApiProperty({
-    type: VehicleImageSummaryDto,
-    isArray: true,
-    example: [],
-  })
+  @ApiPropertyOptional({ example: 1, nullable: true })
+  locationId: number | null;
+
+  @ApiPropertyOptional({ type: LocationSummaryDto, nullable: true })
+  location: LocationSummaryDto | null;
+
+  @ApiProperty({ type: VehicleImageSummaryDto, isArray: true, example: [] })
   images: VehicleImageSummaryDto[];
 }

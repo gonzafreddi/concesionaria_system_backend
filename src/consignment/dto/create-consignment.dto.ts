@@ -18,7 +18,10 @@ export class CreateConsignmentDto {
   @Min(1)
   vehicleId: number;
 
-  @ApiProperty({ example: 25, description: 'ID del cliente dueño del vehiculo' })
+  @ApiProperty({
+    example: 25,
+    description: 'ID del cliente dueño del vehiculo',
+  })
   @Transform(({ value }) => Number(value))
   @IsInt()
   @Min(1)
@@ -41,6 +44,20 @@ export class CreateConsignmentDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
   estimatedSalePrice: number;
+
+  @ApiPropertyOptional({
+    example: 60,
+    description: 'Duracion de la consignacion expresada en dias',
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === '' || value === null || value === undefined
+      ? undefined
+      : Number(value),
+  )
+  @IsInt()
+  @Min(1)
+  durationDays?: number;
 
   @ApiPropertyOptional({
     enum: ConsignmentStatus,

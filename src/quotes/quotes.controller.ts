@@ -1,8 +1,28 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { QuotesService } from './quotes.service';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseBoolPipe,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { ChangeQuoteStatusDto } from './dto/change-quote-status.dto';
+import { CreateQuoteActivityDto } from './dto/create-quote-activity.dto';
 import { CreateQuoteDto } from './dto/create-quote.dto';
+import { UpdateQuoteActivityDto } from './dto/update-quote-activity.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
+import { QuoteStatus } from './entities/quote.entity';
+import { QuotesService } from './quotes.service';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 
+@ApiTags('quotes')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SELLER)
 @Controller('quotes')
 export class QuotesController {
   constructor(private readonly quotesService: QuotesService) {}
@@ -13,22 +33,70 @@ export class QuotesController {
   }
 
   @Get()
-  findAll() {
-    return this.quotesService.findAll();
+  findAll(
+    @Query('status') status?: QuoteStatus,
+    @Query('clientId') clientId?: string,
+    @Query('vehicleId') vehicleId?: string,
+    @Query('userId') userId?: string,
+    @Query('pendingFollowUp', new ParseBoolPipe({ optional: true }))
+    pendingFollowUp?: boolean,
+  ) {
+    return this.quotesService.findAll({
+      status,
+      clientId: clientId ? Number(clientId) : undefined,
+      vehicleId: vehicleId ? Number(vehicleId) : undefined,
+      userId: userId ? Number(userId) : undefined,
+      pendingFollowUp,
+    });
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.quotesService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.quotesService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateQuoteDto: UpdateQuoteDto) {
-    return this.quotesService.update(+id, updateQuoteDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateQuoteDto: UpdateQuoteDto,
+  ) {
+    return this.quotesService.update(id, updateQuoteDto);
+  }
+
+  @Patch(':id/status')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  changeStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() changeQuoteStatusDto: ChangeQuoteStatusDto,
+  ) {
+    return this.quotesService.changeStatus(id, changeQuoteStatusDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.quotesService.remove(+id);
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.quotesService.remove(id);
+  }
+
+  @Get(':id/activities')
+  findActivities(@Param('id', ParseIntPipe) id: number) {
+    return this.quotesService.findActivities(id);
+  }
+
+  @Post(':id/activities')
+  createActivity(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() createActivityDto: CreateQuoteActivityDto,
+  ) {
+    return this.quotesService.createActivity(id, createActivityDto);
+  }
+
+  @Patch(':id/activities/:activityId')
+  updateActivity(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('activityId', ParseIntPipe) activityId: number,
+    @Body() updateActivityDto: UpdateQuoteActivityDto,
+  ) {
+    return this.quotesService.updateActivity(id, activityId, updateActivityDto);
   }
 }

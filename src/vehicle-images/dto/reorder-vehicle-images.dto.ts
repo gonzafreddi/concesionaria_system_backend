@@ -1,11 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  ArrayMinSize,
-  IsArray,
-  IsInt,
-  ValidateNested,
-} from 'class-validator';
+import { ArrayMinSize, IsArray, IsInt, ValidateNested } from 'class-validator';
 
 export class ReorderVehicleImageItemDto {
   @ApiProperty({ example: 101 })

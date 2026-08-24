@@ -23,6 +23,11 @@ import { VehicleImagesModule } from './vehicle-images/vehicle-images.module';
 import { VehicleExpensesModule } from './vehicle-expenses/vehicle-expenses.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { MailModule } from './mail/mail.module';
+import { LocationsModule } from './locations/locations.module';
+import { ExpensesModule } from './expenses/expenses.module';
+import { FinanceModule } from './finance/finance.module';
+import { ServiceOrdersModule } from './service-orders/service-orders.module';
+import { AgencySettingsModule } from './agency-settings/agency-settings.module';
 import {
   getDatabaseConfig,
   shouldSynchronizeSchema,
@@ -43,7 +48,6 @@ import {
     ClientsModule,
     UsersModule,
     VehiclesModule,
-    // VehicleAcquisitionTypes,
     InspectionsModule,
     AuthModule,
     PreSaleModule,
@@ -55,6 +59,11 @@ import {
     VehicleExpensesModule,
     DashboardModule,
     MailModule,
+    LocationsModule,
+    ExpensesModule,
+    FinanceModule,
+    ServiceOrdersModule,
+    AgencySettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

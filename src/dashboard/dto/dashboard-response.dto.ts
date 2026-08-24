@@ -86,9 +86,53 @@ export class DashboardVehicleMarginDto {
   estimatedProfit: number;
 }
 
+export class DashboardSummaryDto {
+  @ApiProperty({ example: 24 })
+  vehiclesTotal: number;
+
+  @ApiProperty({ example: 12 })
+  vehiclesAvailable: number;
+
+  @ApiProperty({ example: 3 })
+  vehiclesReserved: number;
+
+  @ApiProperty({ example: 9 })
+  vehiclesSold: number;
+
+  @ApiProperty({ example: 45 })
+  clientsTotal: number;
+
+  @ApiProperty({ example: 18 })
+  salesTotal: number;
+
+  @ApiProperty({ example: 14 })
+  salesConfirmed: number;
+
+  @ApiProperty({ example: 8500000 })
+  pendingBalanceAmount: number;
+
+  @ApiProperty({
+    example: 12500000,
+    description: 'Valor total del stock disponible',
+  })
+  stockValue: number;
+
+  @ApiProperty({
+    example: 12500000,
+    description: 'Alias historico del valor total del stock disponible',
+  })
+  inventoryValue: number;
+
+  @ApiProperty({ example: 10500000 })
+  inventoryCost: number;
+
+  @ApiProperty({ example: 2000000 })
+  estimatedInventoryProfit: number;
+}
+
 export class DashboardResponseDto {
-  @ApiProperty({ type: Object })
-  summary: Record<string, number>;
+  @ApiProperty({ type: DashboardSummaryDto })
+  summary: DashboardSummaryDto;
 
   @ApiProperty({ type: Object })
   inventory: Record<string, unknown>;

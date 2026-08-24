@@ -26,11 +26,7 @@ import {
   RequestStatus,
   VehicleRequest,
 } from '../vehicle_request/entities/vehicle_request.entity';
-import {
-  Vehicle,
-  VehicleEntryType,
-  VehicleStatus,
-} from '../vehicles/entities/vehicle.entity';
+import { Vehicle, VehicleStatus } from '../vehicles/entities/vehicle.entity';
 import {
   DashboardRecentExpenseDto,
   DashboardRecentSaleDto,
@@ -131,16 +127,17 @@ export class DashboardService {
       this.getVehicleMargin(vehicle),
     );
     const availableVehicleMargins = vehicleMargins.filter(
-      (vehicle) => vehicle.status === VehicleStatus.AVAILABLE,
+      (vehicle) => String(vehicle.status) === String(VehicleStatus.AVAILABLE),
     );
     const activeExpenses = expenses.filter(
-      (expense) => expense.status !== VehicleExpenseStatus.CANCELLED,
+      (expense) =>
+        String(expense.status) !== String(VehicleExpenseStatus.CANCELLED),
     );
     const activeSales = sales.filter(
       (sale) => sale.status !== SaleStatus.CANCELLED,
     );
     const confirmedSales = sales.filter(
-      (sale) => sale.status === SaleStatus.CONFIRMED,
+      (sale) => String(sale.status) === String(SaleStatus.CONFIRMED),
     );
     const salesBalances = activeSales.map((sale) => ({
       sale,
@@ -190,6 +187,7 @@ export class DashboardService {
         salesTotal: sales.length,
         salesConfirmed: confirmedSales.length,
         pendingBalanceAmount,
+        stockValue: inventoryValue,
         inventoryValue,
         inventoryCost,
         estimatedInventoryProfit: inventoryEstimatedProfit,
@@ -197,6 +195,7 @@ export class DashboardService {
       inventory: {
         byStatus: this.countBy(vehicles, (vehicle) => vehicle.status),
         byEntryType: this.countBy(vehicles, (vehicle) => vehicle.entryType),
+        stockValue: inventoryValue,
         availableVehiclesValue: inventoryValue,
         availableVehiclesCost: inventoryCost,
         availableVehiclesExpenses: inventoryExpenses,
@@ -236,8 +235,10 @@ export class DashboardService {
       operations: {
         inspectionsTotal,
         pendingInspections:
-          this.countVehiclesByStatus(vehicles, VehicleStatus.PENDING_INSPECTION) +
-          this.countVehiclesByStatus(vehicles, VehicleStatus.INSPECTION),
+          this.countVehiclesByStatus(
+            vehicles,
+            VehicleStatus.PENDING_INSPECTION,
+          ) + this.countVehiclesByStatus(vehicles, VehicleStatus.INSPECTION),
         preSaleInProgress: preSaleVehicleIds.size,
         pendingDocumentation,
         pendingTransfers: sales.filter(
@@ -260,8 +261,9 @@ export class DashboardService {
       0,
     );
     const acquisitionPrice = Number(vehicle.acquisitionPrice ?? 0);
-    const salePrice = Number(vehicle.price ?? 0);
     const totalCost = acquisitionPrice + expensesTotal;
+    const listedSalePrice = Number(vehicle.price ?? 0);
+    const salePrice = listedSalePrice > 0 ? listedSalePrice : totalCost;
 
     return {
       id: vehicle.id,
@@ -298,7 +300,9 @@ export class DashboardService {
       status: expense.status,
       description: expense.description,
       amount: Number(expense.amount ?? 0),
-      vehicleLabel: expense.vehicle ? this.getVehicleLabel(expense.vehicle) : null,
+      vehicleLabel: expense.vehicle
+        ? this.getVehicleLabel(expense.vehicle)
+        : null,
       expenseDate: this.toIsoString(expense.expenseDate) ?? '',
     };
   }
@@ -378,6 +382,8 @@ export class DashboardService {
       return null;
     }
 
-    return date instanceof Date ? date.toISOString() : new Date(date).toISOString();
+    return date instanceof Date
+      ? date.toISOString()
+      : new Date(date).toISOString();
   }
 }

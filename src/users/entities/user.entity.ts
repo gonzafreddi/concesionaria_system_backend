@@ -34,8 +34,18 @@ export class User {
   @Exclude({ toPlainOnly: true })
   password: string;
 
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @Column({
+    name: 'updated_at',
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  updatedAt: Date;
 
   @OneToMany(() => VehicleRequest, (vr) => vr.user)
   vehicleRequests: VehicleRequest[];

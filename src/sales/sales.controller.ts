@@ -9,12 +9,15 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/create-sale.dto';
 import { UpdateSaleDto } from './dto/update-sale.dto';
 import { UpdateSaleWorkflowStatusDto } from './dto/update-sale-workflow-status.dto';
 
 @ApiTags('sales')
+@Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.SELLER)
 @Controller('sales')
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
@@ -41,11 +44,15 @@ export class SalesController {
   }
 
   @Patch(':id/workflow-status')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   updateWorkflowStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateSaleWorkflowStatusDto: UpdateSaleWorkflowStatusDto,
   ) {
-    return this.salesService.updateWorkflowStatus(id, updateSaleWorkflowStatusDto);
+    return this.salesService.updateWorkflowStatus(
+      id,
+      updateSaleWorkflowStatusDto,
+    );
   }
 
   @Patch(':id')
@@ -57,6 +64,7 @@ export class SalesController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.salesService.remove(id);
   }

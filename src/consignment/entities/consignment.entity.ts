@@ -46,6 +46,14 @@ export class Consignment {
   })
   estimatedSalePrice: number;
 
+  @ApiPropertyOptional({
+    example: 60,
+    description: 'Duracion de la consignacion expresada en dias',
+    nullable: true,
+  })
+  @Column({ name: 'duration_days', type: 'int', nullable: true })
+  durationDays: number | null;
+
   @ApiProperty({
     enum: ConsignmentStatus,
     default: ConsignmentStatus.ACTIVE,

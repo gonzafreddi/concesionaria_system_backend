@@ -19,8 +19,11 @@ import { PurchaseService } from './purchase.service';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
 import { Purchase } from './entities/purchase.entity';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 
 @ApiTags('purchase')
+@Roles(UserRole.ADMIN, UserRole.MANAGER)
 @Controller('purchase')
 export class PurchaseController {
   constructor(private readonly purchaseService: PurchaseService) {}
@@ -52,7 +55,8 @@ export class PurchaseController {
   @Get()
   @ApiOperation({
     summary: 'Listar compras',
-    description: 'Obtiene todas las compras con cliente, vehículo y documentos.',
+    description:
+      'Obtiene todas las compras con cliente, vehículo y documentos.',
   })
   @ApiResponse({
     status: 200,
@@ -122,9 +126,7 @@ export class PurchaseController {
     status: 400,
     description: 'La compra tiene documentos asociados y no puede eliminarse',
   })
-  remove(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<{ deleted: true }> {
+  remove(@Param('id', ParseIntPipe) id: number): Promise<{ deleted: true }> {
     return this.purchaseService.remove(id);
   }
 }

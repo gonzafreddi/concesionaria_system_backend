@@ -28,7 +28,12 @@ describe('AuthGuard', () => {
   });
 
   it('attaches the decoded user for authenticated routes', () => {
-    const payload = { id: 1, email: 'admin@test.com', role: 'ADMIN' };
+    const payload = {
+      id: 1,
+      email: 'admin@test.com',
+      role: 'ADMIN',
+      tokenType: 'access',
+    };
     const jwtService = {
       verify: jest.fn().mockReturnValue(payload),
     } as unknown as JwtService;
@@ -54,8 +59,8 @@ describe('AuthGuard', () => {
     } as unknown as Reflector;
     const guard = new AuthGuard(jwtService, reflector);
 
-    expect(() => guard.canActivate(createContext({ headers: {}, socket: {} }))).toThrow(
-      UnauthorizedException,
-    );
+    expect(() =>
+      guard.canActivate(createContext({ headers: {}, socket: {} })),
+    ).toThrow(UnauthorizedException);
   });
 });

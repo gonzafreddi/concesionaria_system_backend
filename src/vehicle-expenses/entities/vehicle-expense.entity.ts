@@ -85,7 +85,12 @@ export class VehicleExpense {
     nullable: true,
     example: 'Taller Central',
   })
-  @Column({ name: 'supplier_name', type: 'varchar', length: 150, nullable: true })
+  @Column({
+    name: 'supplier_name',
+    type: 'varchar',
+    length: 150,
+    nullable: true,
+  })
   supplierName: string | null;
 
   @ApiPropertyOptional({

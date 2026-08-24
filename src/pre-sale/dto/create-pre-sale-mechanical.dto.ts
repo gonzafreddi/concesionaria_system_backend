@@ -123,4 +123,13 @@ export class CreatePreSaleMechanicalDto {
   })
   @IsNumber()
   vehicleId: number;
+
+  @ApiPropertyOptional({
+    description: 'Process costs and expenses',
+    example: 'Cambio de aceite $45.000, filtros $12.000',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  processCosts?: string | null;
 }

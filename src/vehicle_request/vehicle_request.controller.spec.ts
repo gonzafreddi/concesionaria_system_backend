@@ -6,6 +6,7 @@ import { VehicleRequest } from './entities/vehicle_request.entity';
 import { Client } from '../clients/entities/client.entity';
 import { User } from '../users/entities/user.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
+import { MailService } from '../mail/mail.service';
 
 describe('VehicleRequestController', () => {
   let controller: VehicleRequestController;
@@ -19,6 +20,10 @@ describe('VehicleRequestController', () => {
         { provide: getRepositoryToken(Client), useValue: {} },
         { provide: getRepositoryToken(User), useValue: {} },
         { provide: getRepositoryToken(Vehicle), useValue: {} },
+        {
+          provide: MailService,
+          useValue: { sendVehicleRequestMatchedEmail: jest.fn() },
+        },
       ],
     }).compile();
 

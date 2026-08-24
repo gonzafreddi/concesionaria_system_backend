@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './entities/user.entity';
+import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
+import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+import { User, UserRole } from './entities/user.entity';
 import { encryptPassword } from '../utils/encrypt';
 import { httpResponseType } from '../types/http/response,type';
 
@@ -26,11 +33,10 @@ export class UsersService {
         };
       }
 
-      const hashedPassword = encryptPassword(createUserDto.password);
-
       const user = this.usersRepository.create({
         ...createUserDto,
-        password: hashedPassword,
+        password: encryptPassword(createUserDto.password),
+        isActive: true,
       });
 
       await this.usersRepository.save(user);
@@ -56,25 +62,91 @@ export class UsersService {
     return user;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: number, dto: UpdateUserDto, actorId?: number) {
     const user = await this.findOne(id);
-    const updateData = { ...updateUserDto };
 
-    if (updateData.password) {
-      updateData.password = encryptPassword(updateData.password);
+    if (dto.email && dto.email !== user.email) {
+      const existing = await this.usersRepository.findOne({
+        where: { email: dto.email },
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException('Ya existe un usuario con ese email');
+      }
     }
 
-    Object.assign(user, updateData);
+    if (dto.role && dto.role !== user.role && user.role === UserRole.ADMIN) {
+      await this.ensureAdminCanChangeRole(user, dto.role, actorId);
+    }
+
+    Object.assign(user, dto);
     return this.usersRepository.save(user);
   }
 
-  async remove(id: number) {
+  async updateStatus(id: number, dto: UpdateUserStatusDto, actorId?: number) {
     const user = await this.findOne(id);
-    await this.usersRepository.remove(user);
-    return { deleted: true };
+
+    if (actorId === id && !dto.isActive) {
+      throw new BadRequestException('No puedes desactivar tu propio usuario');
+    }
+
+    if (!dto.isActive && user.role === UserRole.ADMIN) {
+      await this.ensureAtLeastOneActiveAdmin(id);
+    }
+
+    user.isActive = dto.isActive;
+    return this.usersRepository.save(user);
+  }
+
+  async resetPassword(id: number, dto: ResetUserPasswordDto) {
+    const user = await this.findOne(id);
+    user.password = encryptPassword(dto.newPassword);
+    return this.usersRepository.save(user);
+  }
+
+  async remove(id: number, actorId?: number) {
+    return this.updateStatus(id, { isActive: false }, actorId);
   }
 
   async findByEmail(email: string) {
     return this.usersRepository.findOne({ where: { email } });
+  }
+
+  async save(user: User): Promise<User> {
+    return this.usersRepository.save(user);
+  }
+
+  private async ensureAdminCanChangeRole(
+    user: User,
+    newRole: UserRole,
+    actorId?: number,
+  ) {
+    if (newRole === UserRole.ADMIN) return;
+
+    await this.ensureAtLeastOneActiveAdmin(user.id);
+
+    if (actorId === user.id) {
+      throw new BadRequestException(
+        'No puedes quitarte el rol de administrador a ti mismo',
+      );
+    }
+  }
+
+  private async ensureAtLeastOneActiveAdmin(excludedUserId: number) {
+    const activeAdmins = await this.usersRepository.count({
+      where: { role: UserRole.ADMIN, isActive: true },
+    });
+    const excludedUser = await this.usersRepository.findOne({
+      where: { id: excludedUserId },
+    });
+
+    if (
+      activeAdmins <= 1 &&
+      excludedUser?.role === UserRole.ADMIN &&
+      excludedUser.isActive
+    ) {
+      throw new BadRequestException(
+        'Debe existir al menos un administrador activo',
+      );
+    }
   }
 }

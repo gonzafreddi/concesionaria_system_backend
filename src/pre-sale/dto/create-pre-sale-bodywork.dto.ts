@@ -62,4 +62,13 @@ export class CreatePreSaleBodyworkDto {
   })
   @IsNumber()
   vehicleId: number;
+
+  @ApiPropertyOptional({
+    description: 'Process costs and expenses',
+    example: 'Retoques de pintura $30.000',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  processCosts?: string | null;
 }

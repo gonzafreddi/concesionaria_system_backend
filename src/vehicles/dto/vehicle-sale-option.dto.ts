@@ -26,6 +26,11 @@ export class VehicleSaleOptionDto {
 
   @ApiProperty({ example: 'AB123CD' })
   vehiclePlate: string;
+  @ApiPropertyOptional({ example: '9BWZZZ377VT004251', nullable: true })
+  chassisNumber: string | null;
+
+  @ApiPropertyOptional({ example: 'CFZ123456', nullable: true })
+  engineNumber: string | null;
 
   @ApiProperty({ example: 24500000 })
   price: number;
@@ -50,6 +55,9 @@ export class VehicleSaleOptionDto {
 
   @ApiProperty({ example: 15, nullable: true, required: false })
   ownerClientId: number | null;
+
+  @ApiPropertyOptional({ example: 1, nullable: true })
+  locationId: number | null;
 
   @ApiProperty({ example: 20000000, nullable: false })
   aquisitionPrice: number;

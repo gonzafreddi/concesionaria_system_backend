@@ -5,14 +5,15 @@ import { InspectionsController } from './inspections.controller';
 import { Inspection } from './entities/inspection.entity';
 import { Client } from '../clients/entities/client.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
-import { VehiclesService } from '../vehicles/vehicles.service';
+import { VehiclesModule } from '../vehicles/vehicles.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Inspection, Client, Vehicle, VehiclesService]),
+    TypeOrmModule.forFeature([Inspection, Client, Vehicle]),
+    VehiclesModule,
   ],
   controllers: [InspectionsController],
-  providers: [InspectionsService, VehiclesService],
+  providers: [InspectionsService],
   exports: [InspectionsService],
 })
 export class InspectionsModule {}

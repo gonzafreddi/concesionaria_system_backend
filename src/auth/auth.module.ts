@@ -10,6 +10,7 @@ import { User } from '../users/entities/user.entity';
 import { UsersModule } from '../users/users.module';
 import { RolesGuard } from './roles.guard';
 import { getJwtSecret } from '../config/environment';
+import { LoginRateLimitGuard } from './login-rate-limit.guard';
 
 /**
  * Módulo de autenticación
@@ -21,9 +22,9 @@ import { getJwtSecret } from '../config/environment';
     TypeOrmModule.forFeature([User]),
     JwtModule.register({
       secret: getJwtSecret(),
-      signOptions: {
-        expiresIn: '1d',
-      },
+      // La expiración se define explícitamente en AuthService:
+      // access_token = 15m, refresh_token = 7d.
+      // No se usa un signOptions global para evitar tokens largos por defecto.
     }),
   ],
   controllers: [AuthController],
@@ -31,6 +32,7 @@ import { getJwtSecret } from '../config/environment';
     AuthService,
     AuthGuard,
     RolesGuard,
+    LoginRateLimitGuard,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

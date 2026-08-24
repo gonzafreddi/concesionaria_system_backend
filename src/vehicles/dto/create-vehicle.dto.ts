@@ -1,16 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsString,
+  IsDateString,
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
-  IsInt,
-  IsDateString,
+  IsPositive,
+  IsString,
 } from 'class-validator';
 import {
   VehicleEntryType,
-  VehicleType,
   VehicleStatus,
+  VehicleType,
 } from '../entities/vehicle.entity';
 
 export class CreateVehicleDto {
@@ -82,10 +83,30 @@ export class CreateVehicleDto {
   @IsString()
   vehiclePlate: string;
 
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    example: '9BWZZZ377VT004251',
+  })
+  @IsOptional()
+  @IsString()
+  chassisNumber?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, example: 'CFZ123456' })
+  @IsOptional()
+  @IsString()
+  engineNumber?: string | null;
+
   @ApiProperty({ required: false, nullable: true })
   @IsOptional()
   @IsInt()
   ownerClientId?: number | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  locationId?: number | null;
 
   @ApiProperty({ required: false })
   @IsOptional()

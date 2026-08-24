@@ -165,7 +165,10 @@ export class VehicleImagesService {
     return this.getVehicleImages(vehicleId);
   }
 
-  async deleteImage(vehicleId: number, imageId: number): Promise<{
+  async deleteImage(
+    vehicleId: number,
+    imageId: number,
+  ): Promise<{
     message: string;
   }> {
     await this.ensureVehicleExists(vehicleId);

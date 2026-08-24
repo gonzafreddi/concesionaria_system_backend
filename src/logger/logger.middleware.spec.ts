@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { LoggerMiddleware } from './logger.middleware';
 
 describe('LoggerMiddleware', () => {
-  it('logs incoming request body and completed request details', () => {
+  it('logs incoming request metadata and completed request details', () => {
     const middleware = new LoggerMiddleware();
     const next = jest.fn();
     const handlers: Record<string, () => void> = {};
@@ -30,25 +30,24 @@ describe('LoggerMiddleware', () => {
       }),
     };
 
-    middleware.use(req as any, res as any, next);
+    middleware.use(req as any, res, next);
 
     expect(next).toHaveBeenCalledTimes(1);
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringContaining('Incoming request POST /payments'),
     );
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Body: {"saleId":7,"amount":1500}'),
-    );
+    expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining('Body:'));
 
     handlers.finish();
 
     expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'Completed request POST /payments - 200',
-      ),
+      expect.stringContaining('Completed request POST /payments - 200'),
     );
     expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining('User: admin@test.com (id: 42, role: admin)'),
+      expect.stringContaining('User: (id: 42, role: admin)'),
+    );
+    expect(logSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining('admin@test.com'),
     );
     logSpy.mockRestore();
   });

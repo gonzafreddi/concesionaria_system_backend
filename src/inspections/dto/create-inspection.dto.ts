@@ -5,7 +5,6 @@ import {
   IsOptional,
   Min,
   Max,
-  IsDecimal,
   IsString,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -28,6 +27,14 @@ export class CreateInspectionDto {
   })
   @IsNumber()
   vehicleId: number;
+  @ApiPropertyOptional({
+    description: 'Nombre del perito que realiza el peritaje',
+    example: 'Carlos Gomez',
+    type: String,
+  })
+  @IsOptional()
+  @IsString()
+  appraiser?: string;
 
   // Estado General
   @ApiProperty({

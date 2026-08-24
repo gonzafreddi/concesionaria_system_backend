@@ -16,6 +16,9 @@ export class Inspection {
   // Fecha de la requisa / peritaje
   @CreateDateColumn()
   inspectionDate: Date;
+  // Nombre del perito que realizó el peritaje
+  @Column({ type: 'varchar', nullable: true })
+  appraiser: string | null;
 
   // =====================
   // Relaciones

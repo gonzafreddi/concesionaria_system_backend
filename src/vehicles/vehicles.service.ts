@@ -5,6 +5,7 @@ import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import {
   Vehicle,
+  VehicleCategory,
   VehicleEntryType,
   VehicleStatus,
 } from './entities/vehicle.entity';
@@ -75,6 +76,7 @@ export class VehiclesService {
 
     return {
       id: vehicle.id,
+      category: vehicle.category,
       type: vehicle.type,
       brand: vehicle.brand,
       model: vehicle.model,
@@ -131,6 +133,7 @@ export class VehiclesService {
   private mapToVehicleSaleOption(vehicle: Vehicle): VehicleSaleOptionDto {
     return {
       id: vehicle.id,
+      category: vehicle.category,
       type: vehicle.type,
       brand: vehicle.brand,
       model: vehicle.model,
@@ -154,6 +157,7 @@ export class VehiclesService {
     await this.ensureLocationCanBeAssigned(createVehicleDto.locationId);
     const vehiclePayload: DeepPartial<Vehicle> = {
       ...createVehicleDto,
+      category: createVehicleDto.category ?? VehicleCategory.CAR,
       status: createVehicleDto.status ?? VehicleStatus.PENDING_INSPECTION,
       entryType: createVehicleDto.entryType ?? VehicleEntryType.DIRECT_PURCHASE,
       ownerClientId: createVehicleDto.ownerClientId ?? null,

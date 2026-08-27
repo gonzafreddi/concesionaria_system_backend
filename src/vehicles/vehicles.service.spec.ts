@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { In } from 'typeorm';
 import {
+  VehicleCategory,
   VehicleEntryType,
   VehicleStatus,
   VehicleType,
@@ -67,6 +68,7 @@ describe('VehiclesService', () => {
     repositoryMock.find.mockResolvedValue([
       {
         id: 7,
+        category: VehicleCategory.MOTORCYCLE,
         type: VehicleType.USED,
         brand: 'Ford',
         model: 'Focus',
@@ -93,6 +95,7 @@ describe('VehiclesService', () => {
     expect(result).toEqual([
       {
         id: 7,
+        category: VehicleCategory.MOTORCYCLE,
         type: VehicleType.USED,
         brand: 'Ford',
         model: 'Focus',
@@ -116,6 +119,7 @@ describe('VehiclesService', () => {
   it('incluye purchaseDate, mileage y technicalSpecifications al obtener el detalle del vehiculo', async () => {
     repositoryMock.findOne.mockResolvedValue({
       id: 7,
+      category: VehicleCategory.PICKUP,
       type: VehicleType.USED,
       brand: 'Ford',
       model: 'Focus',
@@ -151,6 +155,7 @@ describe('VehiclesService', () => {
       relations: ['purchases', 'images', 'location'],
     });
     expect(result.purchaseDate).toBe('2026-03-24T15:30:00.000Z');
+    expect(result.category).toBe(VehicleCategory.PICKUP);
     expect(result.mileage).toBe(87500);
     expect(result.technicalSpecifications).toBe('Motor 1.6 manual');
     expect(result.entryType).toBe(VehicleEntryType.CONSIGNMENT);
@@ -316,6 +321,7 @@ describe('VehiclesService', () => {
       .mockResolvedValueOnce({ id: 7, locationId: 1 })
       .mockResolvedValueOnce({
         id: 7,
+        category: VehicleCategory.MOTORCYCLE,
         type: VehicleType.USED,
         brand: 'Ford',
         model: 'Focus',

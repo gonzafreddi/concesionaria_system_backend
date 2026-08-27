@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  VehicleCategory,
   VehicleEntryType,
   VehicleStatus,
   VehicleType,
@@ -8,6 +9,9 @@ import {
 export class VehicleSaleOptionDto {
   @ApiProperty({ example: 12 })
   id: number;
+
+  @ApiProperty({ enum: VehicleCategory, example: VehicleCategory.CAR })
+  category: VehicleCategory;
 
   @ApiProperty({ enum: VehicleType, example: VehicleType.USED })
   type: VehicleType;

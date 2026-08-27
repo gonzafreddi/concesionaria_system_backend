@@ -25,6 +25,15 @@ import { VehicleExpense } from '../../vehicle-expenses/entities/vehicle-expense.
 import { Location } from '../../locations/entities/location.entity';
 import { VehicleLocationMovement } from './vehicle-location-movement.entity';
 
+export enum VehicleCategory {
+  CAR = 'CAR',
+  MOTORCYCLE = 'MOTORCYCLE',
+  PICKUP = 'PICKUP',
+  TRUCK = 'TRUCK',
+  MACHINERY = 'MACHINERY',
+  OTHER = 'OTHER',
+}
+
 export enum VehicleType {
   NEW = 'NEW',
   USED = 'USED',
@@ -49,6 +58,13 @@ export enum VehicleEntryType {
 export class Vehicle {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({
+    type: 'enum',
+    enum: VehicleCategory,
+    default: VehicleCategory.CAR,
+  })
+  category: VehicleCategory;
 
   @Column({ type: 'enum', enum: VehicleType })
   type: VehicleType;

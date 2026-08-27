@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LocationSummaryDto } from '../../locations/dto/location-summary.dto';
 import {
+  VehicleCategory,
   VehicleEntryType,
   VehicleStatus,
   VehicleType,
@@ -10,6 +11,9 @@ import { VehicleImageSummaryDto } from './vehicle-image-summary.dto';
 export class VehicleDetailDto {
   @ApiProperty({ example: 12 })
   id: number;
+
+  @ApiProperty({ enum: VehicleCategory, example: VehicleCategory.CAR })
+  category: VehicleCategory;
 
   @ApiProperty({ enum: VehicleType, example: VehicleType.USED })
   type: VehicleType;

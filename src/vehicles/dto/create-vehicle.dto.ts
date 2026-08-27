@@ -9,12 +9,22 @@ import {
   IsString,
 } from 'class-validator';
 import {
+  VehicleCategory,
   VehicleEntryType,
   VehicleStatus,
   VehicleType,
 } from '../entities/vehicle.entity';
 
 export class CreateVehicleDto {
+  @ApiProperty({
+    enum: VehicleCategory,
+    required: false,
+    default: VehicleCategory.CAR,
+  })
+  @IsOptional()
+  @IsEnum(VehicleCategory)
+  category?: VehicleCategory;
+
   @ApiProperty({ enum: VehicleType })
   @IsEnum(VehicleType)
   type: VehicleType;

@@ -5,9 +5,12 @@ import { DocumentsController } from './documents.controller';
 import { GeneratedDocument } from './entities/generated-document.entity';
 import { Sale } from '../sales/entities/sale.entity';
 import { Purchase } from '../purchase/entities/purchase.entity';
+import { Quote } from '../quotes/entities/quote.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([GeneratedDocument, Sale, Purchase])],
+  imports: [
+    TypeOrmModule.forFeature([GeneratedDocument, Sale, Purchase, Quote]),
+  ],
   controllers: [DocumentsController],
   providers: [GeneratedDocumentsService],
 })

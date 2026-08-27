@@ -9,6 +9,7 @@ import {
 } from './entities/generated-document.entity';
 import { Sale } from '../sales/entities/sale.entity';
 import { Purchase } from '../purchase/entities/purchase.entity';
+import { Quote } from '../quotes/entities/quote.entity';
 
 describe('DocumentsService', () => {
   let service: GeneratedDocumentsService;
@@ -22,11 +23,15 @@ describe('DocumentsService', () => {
   const purchaseRepository = {
     exists: jest.fn(),
   };
+  const quoteRepository = {
+    exists: jest.fn(),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     salesRepository.exists.mockResolvedValue(true);
     purchaseRepository.exists.mockResolvedValue(true);
+    quoteRepository.exists.mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -42,6 +47,10 @@ describe('DocumentsService', () => {
         {
           provide: getRepositoryToken(Purchase),
           useValue: purchaseRepository,
+        },
+        {
+          provide: getRepositoryToken(Quote),
+          useValue: quoteRepository,
         },
       ],
     }).compile();

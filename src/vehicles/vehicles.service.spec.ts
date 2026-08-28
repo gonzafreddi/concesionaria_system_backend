@@ -64,6 +64,38 @@ describe('VehiclesService', () => {
     expect(service).toBeDefined();
   });
 
+  it('crea un alta manual como stock propio sin dueño anterior', async () => {
+    const dto = {
+      type: VehicleType.USED,
+      brand: 'Toyota',
+      model: 'Corolla',
+      year: 2021,
+      color: 'Gris',
+      price: 0,
+      vehiclePlate: 'AB123CD',
+      ownerClientId: 42,
+    };
+    repositoryMock.create.mockImplementation((payload) => payload);
+    repositoryMock.save.mockImplementation((vehicle) =>
+      Promise.resolve(vehicle),
+    );
+
+    const result = await service.create(dto);
+
+    expect(repositoryMock.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entryType: VehicleEntryType.MANUAL_ENTRY,
+        ownerClientId: null,
+      }),
+    );
+    expect(result).toEqual(
+      expect.objectContaining({
+        entryType: VehicleEntryType.MANUAL_ENTRY,
+        ownerClientId: null,
+      }),
+    );
+  });
+
   it('lista solo los vehiculos elegibles para venta con el contrato esperado', async () => {
     repositoryMock.find.mockResolvedValue([
       {
@@ -205,6 +237,14 @@ describe('VehiclesService', () => {
         consignments: [],
         tradeIns: [],
       },
+      {
+        id: 16,
+        vehiclePlate: 'AE123FG',
+        entryType: VehicleEntryType.MANUAL_ENTRY,
+        purchases: [],
+        consignments: [],
+        tradeIns: [],
+      },
     ]);
 
     const result = await service.findAll();
@@ -241,6 +281,13 @@ describe('VehiclesService', () => {
         id: 14,
         vehiclePlate: 'AD789GH',
         entryType: VehicleEntryType.TRADE_IN,
+        images: [],
+        location: null,
+      },
+      {
+        id: 16,
+        vehiclePlate: 'AE123FG',
+        entryType: VehicleEntryType.MANUAL_ENTRY,
         images: [],
         location: null,
       },

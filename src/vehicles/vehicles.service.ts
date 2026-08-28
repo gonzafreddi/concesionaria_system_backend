@@ -35,6 +35,10 @@ export class VehiclesService {
   private static readonly SALE_ELIGIBLE_STATUSES = [VehicleStatus.AVAILABLE];
 
   private hasInventoryAcquisition(vehicle: Vehicle): boolean {
+    if (vehicle.entryType === VehicleEntryType.MANUAL_ENTRY) {
+      return true;
+    }
+
     const hasPurchase = vehicle.purchases?.some(
       (purchase) => purchase.status !== PurchaseStatus.CANCELLED,
     );
@@ -159,8 +163,13 @@ export class VehiclesService {
       ...createVehicleDto,
       category: createVehicleDto.category ?? VehicleCategory.CAR,
       status: createVehicleDto.status ?? VehicleStatus.PENDING_INSPECTION,
-      entryType: createVehicleDto.entryType ?? VehicleEntryType.DIRECT_PURCHASE,
-      ownerClientId: createVehicleDto.ownerClientId ?? null,
+      entryType: createVehicleDto.entryType ?? VehicleEntryType.MANUAL_ENTRY,
+      // El alta manual incorpora stock propio: no debe conservar un dueño anterior.
+      ownerClientId:
+        createVehicleDto.entryType === VehicleEntryType.MANUAL_ENTRY ||
+        !createVehicleDto.entryType
+          ? null
+          : (createVehicleDto.ownerClientId ?? null),
       locationId: createVehicleDto.locationId ?? null,
     };
     const vehicle = this.vehiclesRepository.create(vehiclePayload);

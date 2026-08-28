@@ -49,6 +49,7 @@ export enum VehicleStatus {
 }
 
 export enum VehicleEntryType {
+  MANUAL_ENTRY = 'MANUAL_ENTRY',
   DIRECT_PURCHASE = 'DIRECT_PURCHASE',
   CONSIGNMENT = 'CONSIGNMENT',
   TRADE_IN = 'TRADE_IN',
@@ -119,7 +120,7 @@ export class Vehicle {
     name: 'entry_type',
     type: 'enum',
     enum: VehicleEntryType,
-    default: VehicleEntryType.DIRECT_PURCHASE,
+    default: VehicleEntryType.MANUAL_ENTRY,
   })
   entryType: VehicleEntryType;
 
